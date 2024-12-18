@@ -9,7 +9,7 @@ public class BinanceApiClientBean implements BinanceApiClient {
     private static final String BINANCE_BASE_URL = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT";
 
     @Override
-    public String getPrice() {
+    public Double getPrice() {
         try {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(java.time.Duration.ofSeconds(5))
@@ -24,7 +24,7 @@ public class BinanceApiClientBean implements BinanceApiClient {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                return response.body();
+                return Double.parseDouble(parsePriceFromJson(response.body()));
             } else {
                 throw new RuntimeException("Error: Response Code " + response.statusCode());
             }
@@ -32,5 +32,13 @@ public class BinanceApiClientBean implements BinanceApiClient {
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch price", e);
         }
+    }
+
+    private String parsePriceFromJson(String json) {
+        String priceKey = "\"price\":\"";
+        int startIndex = json.indexOf(priceKey) + priceKey.length();
+        int endIndex = json.indexOf("\"", startIndex);
+
+        return json.substring(startIndex, endIndex);
     }
 }

@@ -2,13 +2,13 @@ package com.trading.bot.bots;
 
 import java.util.Random;
 
-public class DumbBot implements Bot {
+public class DumbBotBean implements Bot {
     private final String name;
     private double usdtBalance;
     private double btcBalance;
     private final Random random;
 
-    public DumbBot(String name, double usdtBalance) {
+    public DumbBotBean(String name, double usdtBalance) {
         this.name = name;
         this.usdtBalance = usdtBalance;
         this.btcBalance = 0.0;

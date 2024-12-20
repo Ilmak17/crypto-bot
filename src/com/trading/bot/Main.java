@@ -20,7 +20,7 @@ public class Main {
 
         System.out.println("\nPerforming action for bot1:");
         memory.get(1L).performAction(currentPrice);
-        memory.remove(1L);
+        memory.get(2L).performAction(currentPrice);
 
         System.out.println("\nRemaining bots:");
         memory.getAll().forEach(Bot::getBalance);

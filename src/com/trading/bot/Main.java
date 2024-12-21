@@ -5,24 +5,25 @@ import com.trading.bot.bots.Bot;
 import com.trading.bot.bots.DumbBotBean;
 import com.trading.bot.dao.BotDao;
 import com.trading.bot.dao.InMemoryDaoBean;
+import com.trading.bot.service.TradingSimulatorService;
+import com.trading.bot.service.TradingSimulatorServiceBean;
 
 public class Main {
-    public static void main(String[] args) {
-        BotDao memory = new InMemoryDaoBean();
+    public static void main(String[] args) throws InterruptedException {
+        BinanceApiClientBean binanceApiClientBean = new BinanceApiClientBean();
+        BotDao botDao = new InMemoryDaoBean();
+        Bot bot1 = new DumbBotBean("Bot_1", 1000.0);
+        Bot bot2 = new DumbBotBean("Bot_2", 4000.0);
 
-        memory.add(1L, new DumbBotBean("DumbBot_1", 1000.0));
-        memory.add(2L, new DumbBotBean("DumbBot_2", 2000.0));
+        botDao.add(1L, bot1);
+        botDao.add(2L, bot2);
 
-        BinanceApiClientBean client = new BinanceApiClientBean();
-        double currentPrice = client.getPrice();
+        TradingSimulatorService tradingSimulatorService = new TradingSimulatorServiceBean(
+                binanceApiClientBean, botDao
+        );
 
-        System.out.println("\nPrice of BTCUSDT: " + currentPrice);
-
-        System.out.println("\nPerforming action for bot1:");
-        memory.get(1L).performAction(currentPrice);
-        memory.get(2L).performAction(currentPrice);
-
-        System.out.println("\nRemaining bots:");
-        memory.getAll().forEach(Bot::getBalance);
+        tradingSimulatorService.start();
+        Thread.sleep(60000);
+        tradingSimulatorService.stop();
     }
 }

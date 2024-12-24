@@ -25,5 +25,8 @@ public class Main {
         tradingSimulatorService.start();
         Thread.sleep(60000);
         tradingSimulatorService.stop();
+
+        System.out.println("History of Transactions");
+        botDao.getAll().forEach(Bot::getTransactionHistory);
     }
 }

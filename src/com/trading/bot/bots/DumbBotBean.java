@@ -1,5 +1,10 @@
 package com.trading.bot.bots;
 
+import com.trading.bot.model.OrderType;
+import com.trading.bot.model.Transaction;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class DumbBotBean implements Bot {
@@ -7,12 +12,14 @@ public class DumbBotBean implements Bot {
     private double usdtBalance;
     private double btcBalance;
     private final Random random;
+    private final List<Transaction> transactions;
 
     public DumbBotBean(String name, double usdtBalance) {
         this.name = name;
         this.usdtBalance = usdtBalance;
         this.btcBalance = 0.0;
         random = new Random();
+        transactions = new ArrayList<>();
     }
 
     @Override
@@ -30,6 +37,12 @@ public class DumbBotBean implements Bot {
         System.out.printf("%s Balance: %.2f USDT | %.6f BTC%n", name, usdtBalance, btcBalance);
     }
 
+    @Override
+    public void getTransactionHistory() {
+        System.out.println(name + " History");
+        transactions.forEach(System.out::println);
+    }
+
     private void buy(double price) {
         double spendAmount = random.nextDouble(usdtBalance);
         if (spendAmount > 0) {
@@ -37,6 +50,7 @@ public class DumbBotBean implements Bot {
             usdtBalance -= spendAmount;
             btcBalance += btcBought;
 
+            transactions.add(new Transaction(OrderType.BUY, price, btcBought, spendAmount));
             System.out.printf("%s bought %.6f BTC for %.2f USDT.%n", name, btcBought, spendAmount);
         }
     }
@@ -48,7 +62,9 @@ public class DumbBotBean implements Bot {
             btcBalance -= btcToSell;
             usdtBalance += earnedUsdt;
 
+            transactions.add(new Transaction(OrderType.SELL, price, btcToSell, earnedUsdt));
             System.out.printf("%s sold %.6f BTC for %.2f USDT.%n", name, btcToSell, earnedUsdt);
         }
     }
+
 }

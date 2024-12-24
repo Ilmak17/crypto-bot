@@ -4,4 +4,6 @@ public interface Bot {
     void performAction(double price);
 
     void getBalance();
+
+    void getTransactionHistory();
 }

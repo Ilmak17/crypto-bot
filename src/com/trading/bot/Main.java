@@ -1,8 +1,8 @@
 package com.trading.bot;
 
 import com.trading.bot.api.BinanceApiClientBean;
-import com.trading.bot.bots.Bot;
 import com.trading.bot.bots.DumbBotBean;
+import com.trading.bot.bots.SmartBotBean;
 import com.trading.bot.dao.BotDao;
 import com.trading.bot.dao.InMemoryDaoBean;
 import com.trading.bot.service.TradingSimulatorService;
@@ -10,23 +10,28 @@ import com.trading.bot.service.TradingSimulatorServiceBean;
 
 public class Main {
     public static void main(String[] args) throws InterruptedException {
-        BinanceApiClientBean binanceApiClientBean = new BinanceApiClientBean();
+        BinanceApiClientBean apiClient = new BinanceApiClientBean();
+
         BotDao botDao = new InMemoryDaoBean();
-        Bot bot1 = new DumbBotBean("Bot_1", 1000.0);
-        Bot bot2 = new DumbBotBean("Bot_2", 4000.0);
+        botDao.add(1L, new DumbBotBean("DumbBot", 1000.0));
+        botDao.add(2L, new SmartBotBean("SmartBot", 1000.0));
 
-        botDao.add(1L, bot1);
-        botDao.add(2L, bot2);
+        TradingSimulatorService simulator = new TradingSimulatorServiceBean(apiClient, botDao);
 
-        TradingSimulatorService tradingSimulatorService = new TradingSimulatorServiceBean(
-                binanceApiClientBean, botDao
-        );
+        simulator.start();
 
-        tradingSimulatorService.start();
-        Thread.sleep(60000);
-        tradingSimulatorService.stop();
+        Thread.sleep(30000);
 
-        System.out.println("History of Transactions");
-        botDao.getAll().forEach(Bot::getTransactionHistory);
+        simulator.stop();
+
+        System.out.println("\nSimulation Results:");
+        botDao.getAll().forEach(bot -> {
+            bot.getBalance();
+            if (bot instanceof SmartBotBean) {
+                bot.getTransactionHistory();
+            } else if (bot instanceof DumbBotBean) {
+                bot.getTransactionHistory();
+            }
+        });
     }
 }

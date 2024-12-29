@@ -14,6 +14,7 @@ public class SmartBotBean implements Bot {
     private double btcBalance;
     private final List<Transaction> transactions;
     private final Queue<Double> priceHistory;
+    private static final Double COMMISSION = 0.001;
 
     public SmartBotBean(String name, double usdtBalance) {
         this.name = name;
@@ -28,13 +29,11 @@ public class SmartBotBean implements Bot {
         if (priceHistory.size() == 5) {
             priceHistory.poll();
         }
-        priceHistory.add(price);
+        priceHistory.offer(price);
 
-        double averagePrice = getAveragePrice();
-
-        if (price < averagePrice && usdtBalance > 0) {
+        if (isTrendingDown() && usdtBalance > 0) {
             buy(price);
-        } else if (price > averagePrice && btcBalance > 0) {
+        } else if (isTrendingUp() && btcBalance > 0) {
             sell(price);
         } else {
             System.out.println(name + " decided to skip.");
@@ -56,6 +55,7 @@ public class SmartBotBean implements Bot {
         double spendAmount = usdtBalance * 0.5;
         if (spendAmount > 0) {
             double btcBought = spendAmount / price;
+            btcBought *= (1 - COMMISSION);
             usdtBalance -= spendAmount;
             btcBalance += btcBought;
 
@@ -68,6 +68,7 @@ public class SmartBotBean implements Bot {
         double btcToSell = btcBalance * 0.5;
         if (btcToSell > 0) {
             double earnedUsdt = btcToSell * price;
+            earnedUsdt *= (1 - COMMISSION);
             btcBalance -= btcToSell;
             usdtBalance += earnedUsdt;
 
@@ -76,10 +77,25 @@ public class SmartBotBean implements Bot {
         }
     }
 
-    private Double getAveragePrice() {
-        return priceHistory.stream()
-                .mapToDouble(Double::doubleValue)
-                .average()
-                .orElse(0.0);
+    private boolean isTrendingUp() {
+        if (priceHistory.size() < 2) return false;
+
+        double[] prices = priceHistory.stream().mapToDouble(Double::doubleValue).toArray();
+        for (int i = 1; i < prices.length; i++) {
+            if (prices[i] <= prices[i - 1]) return false;
+        }
+
+        return true;
+    }
+
+    private boolean isTrendingDown() {
+        if (priceHistory.size() < 2) return false;
+
+        double[] prices = priceHistory.stream().mapToDouble(Double::doubleValue).toArray();
+        for (int i = 1; i < prices.length; i++) {
+            if (prices[i] >= prices[i - 1]) return false;
+        }
+
+        return true;
     }
 }

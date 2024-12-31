@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Random;
 
 public class SmartBotBean implements Bot {
     private final String name;
@@ -15,6 +16,7 @@ public class SmartBotBean implements Bot {
     private final List<Transaction> transactions;
     private final Queue<Double> priceHistory;
     private static final Double COMMISSION = 0.001;
+    private final Random random;
 
     public SmartBotBean(String name, double usdtBalance) {
         this.name = name;
@@ -22,6 +24,7 @@ public class SmartBotBean implements Bot {
         this.btcBalance = 0.0;
         transactions = new ArrayList<>();
         priceHistory = new LinkedList<>();
+        random = new Random();
     }
 
     @Override
@@ -31,9 +34,13 @@ public class SmartBotBean implements Bot {
         }
         priceHistory.offer(price);
 
-        if (isTrendingDown() && usdtBalance > 0) {
+
+        // volume in market
+        double tradeVolume = random.nextDouble(5000);
+
+        if (isTrendingDown() && usdtBalance > 0 && tradeVolume > 2500) {
             buy(price);
-        } else if (isTrendingUp() && btcBalance > 0) {
+        } else if (isTrendingUp() && btcBalance > 0 && tradeVolume > 2500) {
             sell(price);
         } else {
             System.out.println(name + " decided to skip.");
@@ -97,5 +104,38 @@ public class SmartBotBean implements Bot {
         }
 
         return true;
+    }
+
+    public double calculateAverageProfit() {
+        if (transactions.isEmpty()) {
+            return 0.0;
+        }
+
+        return calculateProfit() / transactions.size();
+    }
+
+    public double calculateProfit() {
+        double initialBalance = 1000.0;
+        double currentBalance = usdtBalance + btcBalance * (transactions.isEmpty() ? 0 : transactions.get(transactions.size() - 1).price());
+
+        return currentBalance - initialBalance;
+    }
+
+    public int countSuccessfulTrades() {
+        int successfulTrades = 0;
+        for (int i = 0; i < transactions.size(); i++) {
+            Transaction current = transactions.get(i);
+            if (current.type().equals(OrderType.SELL)) {
+                for (int j = 0; j < i; j++) {
+                    Transaction previous = transactions.get(j);
+                    if (previous.type().equals(OrderType.BUY) && previous.price() < current.price()) {
+                        successfulTrades++;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return successfulTrades;
     }
 }

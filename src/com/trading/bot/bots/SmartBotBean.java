@@ -34,7 +34,6 @@ public class SmartBotBean implements Bot {
         }
         priceHistory.offer(price);
 
-
         // volume in market
         double tradeVolume = random.nextDouble(5000);
 

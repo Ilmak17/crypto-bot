@@ -36,10 +36,11 @@ public class SmartBotBean implements Bot {
 
         // volume in market
         double tradeVolume = random.nextDouble(5000);
+        boolean isTrendingUp = isTrendingUp(priceHistory);
 
-        if (isTrendingDown() && usdtBalance > 0 && tradeVolume > 2500) {
+        if (!isTrendingUp && usdtBalance > 0 && tradeVolume > 2500) {
             buy(price);
-        } else if (isTrendingUp() && btcBalance > 0 && tradeVolume > 2500) {
+        } else if (isTrendingUp && btcBalance > 0 && tradeVolume > 2500) {
             sell(price);
         } else {
             System.out.println(name + " decided to skip.");
@@ -52,9 +53,18 @@ public class SmartBotBean implements Bot {
     }
 
     @Override
-    public void getTransactionHistory() {
-        System.out.println(name + " Transaction History:");
-        transactions.forEach(System.out::println);
+    public List<Transaction> getTransactionHistory() {
+        return transactions;
+    }
+
+    @Override
+    public Double getUsdtBalance() {
+        return usdtBalance;
+    }
+
+    @Override
+    public Double getBtcBalance() {
+        return btcBalance;
     }
 
     private void buy(double price) {
@@ -81,60 +91,5 @@ public class SmartBotBean implements Bot {
             transactions.add(new Transaction(OrderType.SELL, price, btcToSell, earnedUsdt));
             System.out.printf("%s sold %.6f BTC for %.2f USDT.%n", name, btcToSell, earnedUsdt);
         }
-    }
-
-    private boolean isTrendingUp() {
-        if (priceHistory.size() < 2) return false;
-
-        double[] prices = priceHistory.stream().mapToDouble(Double::doubleValue).toArray();
-        for (int i = 1; i < prices.length; i++) {
-            if (prices[i] <= prices[i - 1]) return false;
-        }
-
-        return true;
-    }
-
-    private boolean isTrendingDown() {
-        if (priceHistory.size() < 2) return false;
-
-        double[] prices = priceHistory.stream().mapToDouble(Double::doubleValue).toArray();
-        for (int i = 1; i < prices.length; i++) {
-            if (prices[i] >= prices[i - 1]) return false;
-        }
-
-        return true;
-    }
-
-    public double calculateAverageProfit() {
-        if (transactions.isEmpty()) {
-            return 0.0;
-        }
-
-        return calculateProfit() / transactions.size();
-    }
-
-    public double calculateProfit() {
-        double initialBalance = 1000.0;
-        double currentBalance = usdtBalance + btcBalance * (transactions.isEmpty() ? 0 : transactions.get(transactions.size() - 1).price());
-
-        return currentBalance - initialBalance;
-    }
-
-    public int countSuccessfulTrades() {
-        int successfulTrades = 0;
-        for (int i = 0; i < transactions.size(); i++) {
-            Transaction current = transactions.get(i);
-            if (current.type().equals(OrderType.SELL)) {
-                for (int j = 0; j < i; j++) {
-                    Transaction previous = transactions.get(j);
-                    if (previous.type().equals(OrderType.BUY) && previous.price() < current.price()) {
-                        successfulTrades++;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return successfulTrades;
     }
 }

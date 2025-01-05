@@ -38,9 +38,18 @@ public class DumbBotBean implements Bot {
     }
 
     @Override
-    public void getTransactionHistory() {
-        System.out.println(name + " History");
-        transactions.forEach(System.out::println);
+    public List<Transaction> getTransactionHistory() {
+        return transactions;
+    }
+
+    @Override
+    public Double getUsdtBalance() {
+        return usdtBalance;
+    }
+
+    @Override
+    public Double getBtcBalance() {
+        return btcBalance;
     }
 
     private void buy(double price) {
@@ -67,34 +76,4 @@ public class DumbBotBean implements Bot {
         }
     }
 
-    public double calculateAverageProfit() {
-        if (transactions.isEmpty()) {
-            return 0.0;
-        }
-        return calculateProfit() / transactions.size();
-    }
-
-    public double calculateProfit() {
-        double initialBalance = 1000.0;
-        double currentBalance = usdtBalance + btcBalance * (transactions.isEmpty() ? 0 : transactions.get(transactions.size() - 1).price());
-        return currentBalance - initialBalance;
-    }
-
-    public int countSuccessfulTrades() {
-        int successfulTrades = 0;
-        for (int i = 0; i < transactions.size(); i++) {
-            Transaction current = transactions.get(i);
-            if (current.type().equals(OrderType.SELL)) {
-                for (int j = 0; j < i; j++) {
-                    Transaction previous = transactions.get(j);
-                    if (previous.type().equals(OrderType.BUY) && previous.price() < current.price()) {
-                        successfulTrades++;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return successfulTrades;
-    }
 }

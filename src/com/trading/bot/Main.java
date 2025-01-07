@@ -29,15 +29,14 @@ public class Main {
         botDao.getAll().forEach(bot -> {
             bot.getBalance();
             if (bot instanceof SmartBotBean smartBot) {
-                smartBot.getTransactionHistory();
-                System.out.printf("%s Profit: %.2f USDT%n", smartBot.calculateProfit());
-                System.out.printf("%s Average Profit per Operation: %.2f USDT%n", smartBot.calculateAverageProfit());
-                System.out.printf("%s Successful Trades: %d%n", smartBot.countSuccessfulTrades());
+                System.out.printf("SmartBot ");
+                System.out.printf("Profit: %.2f USDT%n", smartBot.calculateProfit());
+                System.out.printf(" Average Profit per Operation: %.2f USDT%n", smartBot.calculateAverageProfit());
+                System.out.printf("Successful Trades: %d%n", smartBot.countSuccessfulTrades());
             } else if (bot instanceof DumbBotBean dumbBot) {
-                dumbBot.getTransactionHistory();
-                System.out.printf("%s Profit: %.2f USDT%n", dumbBot.calculateProfit());
-                System.out.printf("%s Average Profit per Operation: %.2f USDT%n", dumbBot.calculateAverageProfit());
-                System.out.printf("%s Successful Trades: %d%n", dumbBot.countSuccessfulTrades());
+                System.out.printf("Profit: %.2f USDT%n", dumbBot.calculateProfit());
+                System.out.printf("Average Profit per Operation: %.2f USDT%n", dumbBot.calculateAverageProfit());
+                System.out.printf("Successful Trades: %d%n", dumbBot.countSuccessfulTrades());
             }
         });
     }

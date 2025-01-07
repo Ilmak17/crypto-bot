@@ -25,7 +25,6 @@ public class Main {
         simulator.stop();
 
         System.out.println("\nSimulation Results:");
-        System.out.println("\nSimulation Results:");
         botDao.getAll().forEach(bot -> {
             bot.getBalance();
             if (bot instanceof SmartBotBean smartBot) {

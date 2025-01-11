@@ -1,5 +1,8 @@
 package com.trading.bot.model;
 
+import com.trading.bot.model.enums.OrderType;
+
+@Deprecated
 public record Transaction(OrderType type, double price, double amount, double total) {
 
     @Override

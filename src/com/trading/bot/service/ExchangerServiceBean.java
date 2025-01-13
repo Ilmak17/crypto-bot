@@ -15,17 +15,38 @@ public class ExchangerServiceBean implements ExchangerService {
     public void placeOrder(Order order) {
         if (order.getType().equals(OrderType.BUY)) {
             buyOrders.add(order);
-            buyOrders.sort((o1, o2) -> o2.getPrice().compareTo(o1.getPrice()));
-
         } else {
             sellOrders.add(order);
             sellOrders.sort(Comparator.comparing(Order::getPrice));
         }
+
+        executeOrders();
     }
 
     @Override
-    public void executeOrder(Order order) {
+    public void executeOrders() {
+        while (!buyOrders.isEmpty() && !sellOrders.isEmpty()) {
+            Order buyOrder = buyOrders.get(0);
+            Order sellOrder = sellOrders.get(0);
 
+            if (buyOrder.getPrice() >= sellOrder.getPrice()) {
+                double quantity = Math.min(buyOrder.getQuantity(), sellOrder.getQuantity());
+                buyOrder.fill(quantity);
+                sellOrder.fill(quantity);
+
+                System.out.printf("Matched: BUY %.6f @ %.2f, SELL %.6f @ %.2f%n",
+                        quantity, buyOrder.getPrice(), quantity, sellOrder.getPrice());
+
+                if (buyOrder.getQuantity() == 0) {
+                    buyOrders.remove(0);
+                }
+                if (sellOrder.getQuantity() == 0) {
+                    sellOrders.remove(0);
+                }
+            } else {
+                break;
+            }
+        }
     }
 
     @Override

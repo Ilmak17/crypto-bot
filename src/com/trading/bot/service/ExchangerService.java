@@ -6,4 +6,5 @@ public interface ExchangerService {
     void placeOrder(Order order);
     void executeOrders();
     void getOrderBook();
+    boolean cancelOrder(Long orderId);
 }

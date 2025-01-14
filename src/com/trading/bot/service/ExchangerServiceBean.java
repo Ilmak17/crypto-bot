@@ -37,12 +37,8 @@ public class ExchangerServiceBean implements ExchangerService {
                 System.out.printf("Matched: BUY %.6f @ %.2f, SELL %.6f @ %.2f%n",
                         quantity, buyOrder.getPrice(), quantity, sellOrder.getPrice());
 
-                if (buyOrder.getQuantity() == 0) {
-                    buyOrders.remove(0);
-                }
-                if (sellOrder.getQuantity() == 0) {
-                    sellOrders.remove(0);
-                }
+                if (buyOrder.getQuantity() == 0) buyOrders.remove(0);
+                if (sellOrder.getQuantity() == 0) sellOrders.remove(0);
             } else {
                 break;
             }
@@ -57,5 +53,29 @@ public class ExchangerServiceBean implements ExchangerService {
         System.out.println("Sell Orders:");
         sellOrders.forEach(order -> System.out.printf("ID: %s, Price: %.2f, Quantity: %.6f, Status: %s%n",
                 order.getId(), order.getPrice(), order.getQuantity(), order.getStatus()));
+    }
+
+    @Override
+    public boolean cancelOrder(Long orderId) {
+        for (Order order : buyOrders) {
+            if (order.getId().equals(orderId)) {
+                order.cancel();
+                buyOrders.remove(order);
+                System.out.println("Cancelled Buy Order: " + orderId);
+                return true;
+            }
+        }
+
+        for (Order order : sellOrders) {
+            if (order.getId().equals(orderId)) {
+                order.cancel();
+                sellOrders.remove(order);
+                System.out.println("Cancelled Sell Order: " + orderId);
+                return true;
+            }
+        }
+
+        System.out.println("Order ID not found: " + orderId);
+        return false;
     }
 }

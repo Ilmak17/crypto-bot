@@ -30,6 +30,10 @@ public class Order {
         status = OrderStatus.PARTIALLY_FILLED;
     }
 
+    public boolean isFilled() {
+        return status == OrderStatus.FILLED;
+    }
+
     public void cancel() {
         if (status == OrderStatus.FILLED) {
             return;

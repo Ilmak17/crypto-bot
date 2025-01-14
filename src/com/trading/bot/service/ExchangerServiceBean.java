@@ -4,6 +4,7 @@ import com.trading.bot.model.Order;
 import com.trading.bot.model.enums.OrderType;
 
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.PriorityQueue;
 
 public class ExchangerServiceBean implements ExchangerService {
@@ -17,11 +18,11 @@ public class ExchangerServiceBean implements ExchangerService {
 
     @Override
     public void placeOrder(Order order) {
-        if (order.getType() == OrderType.BUY) {
-            buyOrders.add(order);
-        } else {
-            sellOrders.add(order);
-        }
+        Optional.of(order)
+                .map(Order::getType)
+                .filter(type -> type == OrderType.BUY)
+                .ifPresentOrElse(type -> buyOrders.add(order),
+                        () -> sellOrders.add(order));
         executeOrders();
     }
 

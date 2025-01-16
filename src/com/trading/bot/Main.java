@@ -1,42 +1,45 @@
 package com.trading.bot;
 
-import com.trading.bot.api.BinanceApiClientBean;
-import com.trading.bot.bots.DumbBotBean;
-import com.trading.bot.bots.SmartBotBean;
-import com.trading.bot.dao.BotDao;
-import com.trading.bot.dao.InMemoryDaoBean;
-import com.trading.bot.service.TradingSimulatorService;
-import com.trading.bot.service.TradingSimulatorServiceBean;
+import com.trading.bot.model.Order;
+import com.trading.bot.model.enums.OrderType;
+import com.trading.bot.service.ExchangerService;
+import com.trading.bot.service.ExchangerServiceBean;
+
 
 public class Main {
     public static void main(String[] args) throws InterruptedException {
-        BinanceApiClientBean apiClient = new BinanceApiClientBean();
+        ExchangerService exchanger = new ExchangerServiceBean();
 
-        BotDao botDao = new InMemoryDaoBean();
-        botDao.add(1L, new DumbBotBean("DumbBot", 1000.0));
-        botDao.add(2L, new SmartBotBean("SmartBot", 1000.0));
+        Order buyOrder1 = Order.Builder.newBuilder()
+                .id(1L)
+                .price(50000D)
+                .quantity(1.5)
+                .type(OrderType.BUY)
+                .build();
+        Order sellOrder1 = Order.Builder.newBuilder()
+                .id(2L)
+                .price(49900D)
+                .quantity(0.5)
+                .type(OrderType.SELL)
+                .build();
+        Order sellOrder2 = Order.Builder.newBuilder()
+                .id(3L)
+                .price(50000D)
+                .quantity(1.0)
+                .type(OrderType.SELL)
+                .build();
 
-        TradingSimulatorService simulator = new TradingSimulatorServiceBean(apiClient, botDao);
+        exchanger.placeOrder(buyOrder1);
+        exchanger.placeOrder(sellOrder1);
+        exchanger.placeOrder(sellOrder2);
 
-        simulator.start();
+        System.out.println("Order Book:");
+        exchanger.getOrderBook();
 
-        Thread.sleep(30000);
+        System.out.println("\nCancelling Order ID: 3");
+        exchanger.cancelOrder(3L);
 
-        simulator.stop();
-
-        System.out.println("\nSimulation Results:");
-        botDao.getAll().forEach(bot -> {
-            bot.getBalance();
-            if (bot instanceof SmartBotBean smartBot) {
-                System.out.printf("SmartBot ");
-                System.out.printf("Profit: %.2f USDT%n", smartBot.calculateProfit());
-                System.out.printf(" Average Profit per Operation: %.2f USDT%n", smartBot.calculateAverageProfit());
-                System.out.printf("Successful Trades: %d%n", smartBot.countSuccessfulTrades());
-            } else if (bot instanceof DumbBotBean dumbBot) {
-                System.out.printf("Profit: %.2f USDT%n", dumbBot.calculateProfit());
-                System.out.printf("Average Profit per Operation: %.2f USDT%n", dumbBot.calculateAverageProfit());
-                System.out.printf("Successful Trades: %d%n", dumbBot.countSuccessfulTrades());
-            }
-        });
+        System.out.println("\nOrder Book after cancellation:");
+        exchanger.getOrderBook();
     }
 }

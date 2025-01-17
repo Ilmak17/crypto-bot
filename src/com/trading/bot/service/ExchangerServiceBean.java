@@ -31,36 +31,35 @@ public class ExchangerServiceBean implements ExchangerService {
         while (!buyOrders.isEmpty() && !sellOrders.isEmpty()) {
             Order buyOrder = buyOrders.peek();
             Order sellOrder = sellOrders.peek();
-
-            if (buyOrder.getPrice() >= sellOrder.getPrice()) {
-                double quantity = Math.min(buyOrder.getQuantity(), sellOrder.getQuantity());
-                buyOrder.fill(quantity);
-                sellOrder.fill(quantity);
-
-                System.out.printf("Matched: BUY %.6f @ %.2f, SELL %.6f @ %.2f%n",
-                        quantity, buyOrder.getPrice(), quantity, sellOrder.getPrice());
-
-                if (buyOrder.isFilled()) buyOrders.poll();
-                if (sellOrder.isFilled()) sellOrders.poll();
-            } else {
+            if (buyOrder.getPrice() < sellOrder.getPrice()) {
                 break;
             }
-        }
-    }
 
-    @Override
-    public void getOrderBook() {
-        System.out.println("Buy Orders: " );
-        buyOrders.forEach(order -> System.out.printf("ID: %s, Price: %.2f, Quantity: %.6f, Status: %s%n",
-                order.getId(), order.getPrice(), order.getQuantity(), order.getStatus()));
-        System.out.println("Sell Orders: ");
-        sellOrders.forEach(order -> System.out.printf("ID: %s, Price: %.2f, Quantity: %.6f, Status: %s%n",
-                order.getId(), order.getPrice(), order.getQuantity(), order.getStatus()));
+            double quantity = Math.min(buyOrder.getQuantity(), sellOrder.getQuantity());
+            buyOrder.fill(quantity);
+            sellOrder.fill(quantity);
+
+            System.out.printf("Matched: BUY %.6f @ %.2f, SELL %.6f @ %.2f%n",
+                    quantity, buyOrder.getPrice(), quantity, sellOrder.getPrice());
+
+            if (buyOrder.isFilled()) buyOrders.poll();
+            if (sellOrder.isFilled()) sellOrders.poll();
+        }
     }
 
     @Override
     public boolean cancelOrder(Long orderId) {
         return buyOrders.removeIf(order -> order.getId().equals(orderId))
                 || sellOrders.removeIf(order -> order.getId().equals(orderId));
+    }
+
+    @Override
+    public void getOrderBook() {
+        System.out.println("Buy Orders: ");
+        buyOrders.forEach(order -> System.out.printf("ID: %s, Price: %.2f, Quantity: %.6f, Status: %s%n",
+                order.getId(), order.getPrice(), order.getQuantity(), order.getStatus()));
+        System.out.println("Sell Orders: ");
+        sellOrders.forEach(order -> System.out.printf("ID: %s, Price: %.2f, Quantity: %.6f, Status: %s%n",
+                order.getId(), order.getPrice(), order.getQuantity(), order.getStatus()));
     }
 }

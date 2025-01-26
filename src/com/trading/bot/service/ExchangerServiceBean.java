@@ -1,5 +1,8 @@
 package com.trading.bot.service;
 
+import com.trading.bot.api.BinanceApiClient;
+import com.trading.bot.api.BinanceApiClientBean;
+import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.events.EventBus;
 import com.trading.bot.model.Order;
 import com.trading.bot.model.enums.OrderType;
@@ -12,11 +15,13 @@ public class ExchangerServiceBean implements ExchangerService {
     private final PriorityQueue<Order> buyOrders;
     private final PriorityQueue<Order> sellOrders;
     private final EventBus eventBus;
+    private final BinanceApiClient binanceApiClient;
 
     public ExchangerServiceBean() {
         buyOrders = new PriorityQueue<>((o1, o2) -> Double.compare(o2.getPrice(), o1.getPrice()));
         sellOrders = new PriorityQueue<>(Comparator.comparingDouble(Order::getPrice));
         eventBus = new EventBus();
+        binanceApiClient = new BinanceApiClientBean();
     }
 
     @Override
@@ -63,6 +68,13 @@ public class ExchangerServiceBean implements ExchangerService {
         }
 
         return removed;
+    }
+
+    @Override
+    public void initializeOrderBook(String symbol, int limit) {
+        String orderBook = binanceApiClient.getOrderBook(symbol, limit);
+
+        System.out.println(orderBook);
     }
 
     @Override

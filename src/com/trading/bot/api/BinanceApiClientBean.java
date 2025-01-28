@@ -1,5 +1,8 @@
 package com.trading.bot.api;
 
+import com.trading.bot.api.dto.OrderBookDto;
+import com.trading.bot.api.mapper.OrderBookDtoMapper;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -31,7 +34,7 @@ public class BinanceApiClientBean implements BinanceApiClient {
     }
 
     @Override
-    public String getOrderBook(String symbol, int limit) {
+    public OrderBookDto getOrderBook(String symbol, int limit) {
         String url = String.format("%s/api/v3/depth?symbol=%s&limit=%d", BINANCE_BASE_URL, symbol, limit);
 
         try {
@@ -43,7 +46,7 @@ public class BinanceApiClientBean implements BinanceApiClient {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
-                return response.body();
+                return new OrderBookDtoMapper().toOrderBookDto(response.body());
             } else {
                 throw new RuntimeException("Error: Response Code " + response.statusCode());
             }

@@ -72,7 +72,7 @@ public class ExchangerServiceBean implements ExchangerService {
 
     @Override
     public void initializeOrderBook(String symbol, int limit) {
-        String orderBook = binanceApiClient.getOrderBook(symbol, limit);
+        OrderBookDto orderBook = binanceApiClient.getOrderBook(symbol, limit);
 
         System.out.println(orderBook);
     }

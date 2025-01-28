@@ -1,8 +1,10 @@
 package com.trading.bot.api;
 
+import com.trading.bot.api.dto.OrderBookDto;
+
 public interface BinanceApiClient {
 
     Double getPrice();
 
-    String getOrderBook(String symbol, int limit);
+    OrderBookDto getOrderBook(String symbol, int limit);
 }

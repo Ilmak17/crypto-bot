@@ -1,13 +1,17 @@
 package com.trading.bot.api;
 
 import com.trading.bot.api.dto.OrderBookDto;
+import com.trading.bot.api.dto.PlaceOrderDto;
 import com.trading.bot.api.mapper.OrderBookDtoMapper;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 
 public class BinanceApiClientBean implements BinanceApiClient {
     private static final String BINANCE_BASE_URL = "https://api.binance.com";
@@ -55,6 +59,33 @@ public class BinanceApiClientBean implements BinanceApiClient {
         }
     }
 
+    @Override
+    public void placeOrder(PlaceOrderDto dto) {
+        try {
+            long timestamp = System.currentTimeMillis();
+            String query = String.format(
+                    "symbol=%s&side=%s&type=%s&quantity=%.8f&price=%.2f&timeInForce=GTC&timestamp=%d",
+                    dto.getSymbol(), dto.getSide(), dto.getType(), dto.getQuantity(), dto.getPrice(), timestamp
+            );
+
+            String signature = generateSignature(query, secretKey);
+            String url = String.format("%s/api/v3/order?%s&signature=%s", BINANCE_BASE_URL, query, signature);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .header("X-MBX-APIKEY", apiKey)
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("Order Response: " + response.body());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to place order", e);
+        }
+    }
+
     private HttpResponse<String> processRequest(HttpRequest request) throws IOException, InterruptedException {
         return HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
     }
@@ -65,5 +96,23 @@ public class BinanceApiClientBean implements BinanceApiClient {
         int endIndex = json.indexOf("\"", startIndex);
 
         return json.substring(startIndex, endIndex);
+    }
+
+    private static String generateSignature(String data, String secretKey) {
+        try {
+            Mac hmacSha256 = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            hmacSha256.init(secretKeySpec);
+            byte[] hash = hmacSha256.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating HMAC-SHA256 signature", e);
+        }
     }
 }

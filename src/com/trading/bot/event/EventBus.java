@@ -1,4 +1,4 @@
-package com.trading.bot.events;
+package com.trading.bot.event;
 
 import java.util.ArrayList;
 import java.util.HashMap;

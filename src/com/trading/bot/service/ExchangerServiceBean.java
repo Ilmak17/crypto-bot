@@ -3,7 +3,7 @@ package com.trading.bot.service;
 import com.trading.bot.api.BinanceApiClient;
 import com.trading.bot.api.BinanceApiClientBean;
 import com.trading.bot.api.dto.OrderBookDto;
-import com.trading.bot.events.EventBus;
+import com.trading.bot.event.EventBus;
 import com.trading.bot.model.Order;
 import com.trading.bot.model.enums.OrderType;
 

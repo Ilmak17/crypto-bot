@@ -3,7 +3,7 @@ package com.trading.bot.service;
 import com.trading.bot.api.BinanceApiClient;
 import com.trading.bot.api.BinanceApiClientBean;
 import com.trading.bot.api.dto.OrderBookDto;
-import com.trading.bot.event.EventBus;
+import com.trading.bot.event.KafkaEventPublisher;
 import com.trading.bot.model.Order;
 import com.trading.bot.model.enums.OrderType;
 
@@ -14,13 +14,13 @@ import java.util.PriorityQueue;
 public class ExchangerServiceBean implements ExchangerService {
     private final PriorityQueue<Order> buyOrders;
     private final PriorityQueue<Order> sellOrders;
-    private final EventBus eventBus;
+    private final KafkaEventPublisher kafkaEventPublisher;
     private final BinanceApiClient binanceApiClient;
 
     public ExchangerServiceBean() {
         buyOrders = new PriorityQueue<>((o1, o2) -> Double.compare(o2.getPrice(), o1.getPrice()));
         sellOrders = new PriorityQueue<>(Comparator.comparingDouble(Order::getPrice));
-        eventBus = new EventBus();
+        kafkaEventPublisher = new KafkaEventPublisher("");
         binanceApiClient = new BinanceApiClientBean();
     }
 
@@ -32,7 +32,7 @@ public class ExchangerServiceBean implements ExchangerService {
                 .ifPresentOrElse(type -> buyOrders.add(order),
                         () -> sellOrders.add(order));
 
-        eventBus.publish("ORDER_PLACED", String.format("New order: %s", order));
+        kafkaEventPublisher.publish("ORDER_PLACED", String.format("New order: %s", order));
 
         executeOrders();
     }
@@ -50,7 +50,7 @@ public class ExchangerServiceBean implements ExchangerService {
             buyOrder.fill(quantity);
             sellOrder.fill(quantity);
 
-            eventBus.publish("ORDER_FILLED",
+            kafkaEventPublisher.publish("ORDER_FILLED",
                     String.format("Matched: BUY %.6f @ %.2f, SELL %.6f @ %.2f",
                             quantity, buyOrder.getPrice(), quantity, sellOrder.getPrice()));
 
@@ -64,7 +64,7 @@ public class ExchangerServiceBean implements ExchangerService {
         boolean removed = buyOrders.removeIf(order -> order.getId().equals(orderId))
                 || sellOrders.removeIf(order -> order.getId().equals(orderId));
         if (removed) {
-            eventBus.publish("ORDER_CANCELLED", String.format("Order cancelled: %s", orderId));
+            kafkaEventPublisher.publish("ORDER_CANCELLED", String.format("Order cancelled: %s", orderId));
         }
 
         return removed;

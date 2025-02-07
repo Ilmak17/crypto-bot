@@ -1,5 +1,6 @@
 package com.trading.bot.api;
 
+import com.trading.bot.api.dto.CancelOrderDto;
 import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.api.dto.PlaceOrderDto;
 import com.trading.bot.api.mapper.OrderBookDtoMapper;
@@ -83,6 +84,31 @@ public class BinanceApiClientBean implements BinanceApiClient {
             System.out.println("Order Response: " + response.body());
         } catch (Exception e) {
             throw new RuntimeException("Failed to place order", e);
+        }
+    }
+
+    @Override
+    public void cancelOrder(CancelOrderDto dto) {
+        try {
+            long timestamp = System.currentTimeMillis();
+            String query = String.format("symbol=%s&orderId=%s&timestamp=%d", dto.getSymbol(),
+                    dto.getOrderId(), timestamp);
+
+            String signature = generateSignature(query, secretKey);
+            String url = String.format("%s/api/v3/order?%s&signature=%s", BASE_URL, query, signature);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .DELETE()
+                    .header("X-MBX-APIKEY", apiKey)
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("Cancel Order Response: " + response.body());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to cancel order", e);
         }
     }
 

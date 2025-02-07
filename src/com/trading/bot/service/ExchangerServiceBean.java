@@ -10,18 +10,23 @@ import com.trading.bot.model.enums.OrderType;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.PriorityQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class ExchangerServiceBean implements ExchangerService {
     private final PriorityQueue<Order> buyOrders;
     private final PriorityQueue<Order> sellOrders;
     private final KafkaEventPublisher kafkaEventPublisher;
     private final BinanceApiClient binanceApiClient;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     public ExchangerServiceBean() {
         buyOrders = new PriorityQueue<>((o1, o2) -> Double.compare(o2.getPrice(), o1.getPrice()));
         sellOrders = new PriorityQueue<>(Comparator.comparingDouble(Order::getPrice));
         kafkaEventPublisher = new KafkaEventPublisher("");
         binanceApiClient = new BinanceApiClientBean();
+        startAutoUpdateOrderBook();
     }
 
     @Override
@@ -75,6 +80,18 @@ public class ExchangerServiceBean implements ExchangerService {
         OrderBookDto orderBook = binanceApiClient.getOrderBook(symbol, limit);
 
         System.out.println(orderBook);
+    }
+
+    @Override
+    public void stopAutoUpdate() {
+        scheduler.shutdown();
+    }
+
+    private void startAutoUpdateOrderBook() {
+        scheduler.scheduleAtFixedRate(() -> {
+            System.out.println("Updating Binance Order Book...");
+            initializeOrderBook("BTCUSDT", 10);
+        }, 0, 5, TimeUnit.SECONDS);
     }
 
     @Override

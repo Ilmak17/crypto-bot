@@ -9,4 +9,6 @@ public interface ExchangerService {
     boolean cancelOrder(Long orderId);
 
     void initializeOrderBook(String symbol, int limit);
+
+    void stopAutoUpdate();
 }

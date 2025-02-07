@@ -1,5 +1,6 @@
 package com.trading.bot.model;
 
+import com.trading.bot.model.enums.OrderSourceType;
 import com.trading.bot.model.enums.OrderStatus;
 import com.trading.bot.model.enums.OrderType;
 
@@ -9,6 +10,7 @@ public class Order {
     private Double quantity;
     private Double price;
     private OrderStatus status;
+    private OrderSourceType sourceType;
 
     private Order(Builder builder) {
         id = builder.id;
@@ -16,6 +18,10 @@ public class Order {
         quantity = builder.quantity;
         price = builder.price;
         status = builder.status;
+    }
+
+    public boolean isFromBinance() {
+        return OrderSourceType.BINANCE.equals(sourceType);
     }
 
     public void fill(Double amount) {

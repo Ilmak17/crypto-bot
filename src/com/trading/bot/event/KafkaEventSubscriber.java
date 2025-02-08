@@ -3,6 +3,8 @@ package com.trading.bot.event;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -10,6 +12,8 @@ import java.util.Properties;
 
 public class KafkaEventSubscriber {
     private final KafkaConsumer<String, String> consumer;
+
+    private static final Logger logger = LoggerFactory.getLogger(KafkaEventSubscriber.class);
 
     public KafkaEventSubscriber(String topic) {
         Properties props = new Properties();
@@ -26,7 +30,7 @@ public class KafkaEventSubscriber {
         while (true) {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, String> record : records) {
-                System.out.printf("Consumed message: key=%s, value=%s%n", record.key(), record.value());
+                logger.info("Consumed message: key={}, value={}%n", record.key(), record.value());
             }
         }
     }

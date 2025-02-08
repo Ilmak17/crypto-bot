@@ -6,6 +6,7 @@ import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.event.KafkaEventPublisher;
 import com.trading.bot.model.Order;
 import com.trading.bot.model.enums.OrderType;
+import com.trading.bot.model.enums.Symbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,9 +93,9 @@ public class ExchangerServiceBean implements ExchangerService {
     }
 
     private void startAutoUpdateOrderBook() {
-        scheduler.scheduleAtFixedRate(() -> {
-            initializeOrderBook("BTCUSDT", 10);
-        }, 0, 30, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() ->
+                        initializeOrderBook(Symbol.BTCUSDT.toString(), 10),
+                0, 10, TimeUnit.SECONDS);
     }
 
     @Override

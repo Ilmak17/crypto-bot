@@ -3,6 +3,8 @@ package com.trading.bot.api.mapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trading.bot.api.dto.OrderBookDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,6 +14,8 @@ import static java.util.Objects.isNull;
 
 public class OrderBookDtoMapper {
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final Logger logger = LoggerFactory.getLogger(OrderBookDtoMapper.class);
 
     public OrderBookDto toOrderBookDto(String json) {
         try {
@@ -23,7 +27,8 @@ public class OrderBookDtoMapper {
 
             return new OrderBookDto(lastUpdateId, bids, asks);
         } catch (IOException e) {
-            throw new RuntimeException("Error parsing JSON into OrderBookDto", e);
+            logger.error("Error parsing JSON into OrderBookDto", e);
+            throw new RuntimeException(e);
         }
     }
 

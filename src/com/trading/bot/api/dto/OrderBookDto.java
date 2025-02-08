@@ -7,6 +7,15 @@ public class OrderBookDto {
     private List<OrderEntry> bids;
     private List<OrderEntry> asks;
 
+    public OrderBookDto() {
+    }
+
+    public OrderBookDto(long lastUpdateId, List<OrderEntry> bids, List<OrderEntry> asks) {
+        this.lastUpdateId = lastUpdateId;
+        this.bids = bids;
+        this.asks = asks;
+    }
+
     public long getLastUpdateId() {
         return lastUpdateId;
     }
@@ -31,27 +40,38 @@ public class OrderBookDto {
         this.asks = asks;
     }
 
-    @Override
-    public String toString() {
-        return "OrderBookDto{" +
-                "lastUpdateId=" + lastUpdateId +
-                ", bids=" + bids +
-                ", asks=" + asks +
-                '}';
-    }
-
+    // Вложенный класс OrderEntry
     public static class OrderEntry {
-        private final double price;
-        private final double quantity;
+        private double price;
+        private double quantity;
+
+        public OrderEntry() {
+        }
 
         public OrderEntry(double price, double quantity) {
             this.price = price;
             this.quantity = quantity;
         }
 
+        public double getPrice() {
+            return price;
+        }
+
+        public void setPrice(double price) {
+            this.price = price;
+        }
+
+        public double getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(double quantity) {
+            this.quantity = quantity;
+        }
+
         @Override
         public String toString() {
-            return String.format("Price: %.2f, Quantity: %.6f", price, quantity);
+            return String.format("OrderEntry{price=%.2f, quantity=%.6f}", price, quantity);
         }
     }
 }

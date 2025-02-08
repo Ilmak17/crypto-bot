@@ -20,6 +20,9 @@ public class BinanceApiClientBean implements BinanceApiClient {
             .connectTimeout(java.time.Duration.ofSeconds(5))
             .build();
 
+    private String secretKey = "";
+    private String apiKey = "";
+
     @Override
     public Double getPrice() {
         try {
@@ -95,7 +98,7 @@ public class BinanceApiClientBean implements BinanceApiClient {
                     dto.getOrderId(), timestamp);
 
             String signature = generateSignature(query, secretKey);
-            String url = String.format("%s/api/v3/order?%s&signature=%s", BASE_URL, query, signature);
+            String url = String.format("%s/api/v3/order?%s&signature=%s", BINANCE_BASE_URL, query, signature);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))

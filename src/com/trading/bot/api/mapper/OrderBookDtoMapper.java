@@ -1,72 +1,43 @@
 package com.trading.bot.api.mapper;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trading.bot.api.dto.OrderBookDto;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Objects.isNull;
+
 public class OrderBookDtoMapper {
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public OrderBookDto toOrderBookDto(String json) {
-        long lastUpdateId = Long.parseLong(extractValue(json));
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            long lastUpdateId = root.get("lastUpdateId").asLong();
 
-        OrderBookDto orderBook = new OrderBookDto();
-        orderBook.setLastUpdateId(lastUpdateId);
+            List<OrderBookDto.OrderEntry> bids = parseOrderEntries(root.get("bids"));
+            List<OrderBookDto.OrderEntry> asks = parseOrderEntries(root.get("asks"));
 
-        String bidsArray = extractArray(json, "\"bids\":");
-        String asksArray = extractArray(json, "\"asks\":");
-
-        List<OrderBookDto.OrderEntry> bids = parseOrderEntries(bidsArray);
-        orderBook.setBids(bids);
-
-        List<OrderBookDto.OrderEntry> asks = parseOrderEntries(asksArray);
-        orderBook.setAsks(asks);
-
-        return orderBook;
+            return new OrderBookDto(lastUpdateId, bids, asks);
+        } catch (IOException e) {
+            throw new RuntimeException("Error parsing JSON into OrderBookDto", e);
+        }
     }
 
-    private String extractValue(String json) {
-        int keyIndex = json.indexOf("\"lastUpdateId\":");
-        int startIndex = keyIndex + "\"lastUpdateId\":".length();
-        int endIndex = json.indexOf(",", startIndex);
-
-        return json.substring(startIndex, endIndex).trim();
-    }
-
-    private String extractArray(String json, String key) {
-        int keyIndex = json.indexOf(key);
-
-        int startIndex = json.indexOf("[", keyIndex);
-        int endIndex = json.indexOf("]", startIndex);
-
-        return json.substring(startIndex + 1, endIndex).trim();
-    }
-
-    private List<OrderBookDto.OrderEntry> parseOrderEntries(String arrayString) {
+    private List<OrderBookDto.OrderEntry> parseOrderEntries(JsonNode entriesNode) {
         List<OrderBookDto.OrderEntry> entries = new ArrayList<>();
-
-        if (arrayString.isEmpty()) {
+        if (isNull(entriesNode) || !entriesNode.isArray()) {
             return entries;
         }
 
-        arrayString = arrayString.trim().replace("\"", "");
-
-        String[] elements = arrayString.split("\\],\\[");
-
-        for (String element : elements) {
-            element = element.replace("[", "").replace("]", "");
-            OrderBookDto.OrderEntry entry = parseOrderEntry(element);
-            entries.add(entry);
+        for (JsonNode entry : entriesNode) {
+            double price = entry.get(0).asDouble();
+            double quantity = entry.get(1).asDouble();
+            entries.add(new OrderBookDto.OrderEntry(price, quantity));
         }
-
         return entries;
-    }
-
-    private OrderBookDto.OrderEntry parseOrderEntry(String element) {
-        String[] parts = element.split(",");
-
-        double price = Double.parseDouble(parts[0]);
-        double quantity = Double.parseDouble(parts[1]);
-        return new OrderBookDto.OrderEntry(price, quantity);
     }
 }

@@ -1,7 +1,6 @@
 package com.trading.bot.dao;
 
 import com.trading.bot.bots.Bot;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

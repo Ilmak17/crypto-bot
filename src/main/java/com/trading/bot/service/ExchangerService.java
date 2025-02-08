@@ -1,5 +1,6 @@
 package com.trading.bot.service;
 
+
 import com.trading.bot.model.Order;
 
 public interface ExchangerService {

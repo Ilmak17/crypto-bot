@@ -1,7 +1,8 @@
 package com.trading.bot.bots;
 
-import com.trading.bot.model.enums.OrderType;
+
 import com.trading.bot.model.Transaction;
+import com.trading.bot.model.enums.OrderType;
 
 import java.util.ArrayList;
 import java.util.List;

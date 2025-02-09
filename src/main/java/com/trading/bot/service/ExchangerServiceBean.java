@@ -131,7 +131,7 @@ public class ExchangerServiceBean implements ExchangerService {
         logger.info("Buy Orders: ");
         buyOrders.forEach(order -> logger.info(String.format("ID: %s, Price: %.2f, Quantity: %.6f, Status: %s%n",
                 order.getId(), order.getPrice(), order.getQuantity(), order.getStatus())));
-        System.out.println("Sell Orders: ");
+        logger.info("Sell Orders: ");
         sellOrders.forEach(order -> logger.info(String.format("ID: %s, Price: %.2f, Quantity: %.6f, Status: %s%n",
                 order.getId(), order.getPrice(), order.getQuantity(), order.getStatus())));
     }

@@ -5,6 +5,9 @@ import com.trading.bot.api.BinanceApiClientBean;
 import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.event.KafkaEventPublisher;
 import com.trading.bot.model.Order;
+import com.trading.bot.model.enums.OrderEvent;
+import com.trading.bot.model.enums.OrderSourceType;
+import com.trading.bot.model.enums.OrderStatus;
 import com.trading.bot.model.enums.OrderType;
 import com.trading.bot.model.enums.Symbol;
 import org.slf4j.Logger;
@@ -16,6 +19,10 @@ import java.util.PriorityQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import static com.trading.bot.model.enums.OrderEvent.ORDER_CANCELLED;
+import static com.trading.bot.model.enums.OrderEvent.ORDER_FILLED;
+import static com.trading.bot.model.enums.OrderEvent.ORDER_PLACED;
 
 public class ExchangerServiceBean implements ExchangerService {
     private final PriorityQueue<Order> buyOrders;
@@ -42,7 +49,7 @@ public class ExchangerServiceBean implements ExchangerService {
                 .ifPresentOrElse(type -> buyOrders.add(order),
                         () -> sellOrders.add(order));
 
-        kafkaEventPublisher.publish("ORDER_PLACED", String.format("New order: %s", order));
+        kafkaEventPublisher.publish(ORDER_PLACED, String.format("New order: %s", order));
 
         executeOrders();
     }
@@ -52,6 +59,7 @@ public class ExchangerServiceBean implements ExchangerService {
         while (!buyOrders.isEmpty() && !sellOrders.isEmpty()) {
             Order buyOrder = buyOrders.peek();
             Order sellOrder = sellOrders.peek();
+
             if (buyOrder.getPrice() < sellOrder.getPrice()) {
                 break;
             }
@@ -60,31 +68,51 @@ public class ExchangerServiceBean implements ExchangerService {
             buyOrder.fill(quantity);
             sellOrder.fill(quantity);
 
-            kafkaEventPublisher.publish("ORDER_FILLED",
+            kafkaEventPublisher.publish(ORDER_FILLED,
                     String.format("Matched: BUY %.6f @ %.2f, SELL %.6f @ %.2f",
                             quantity, buyOrder.getPrice(), quantity, sellOrder.getPrice()));
 
-            if (buyOrder.isFilled()) buyOrders.poll();
-            if (sellOrder.isFilled()) sellOrders.poll();
+            if (buyOrder.isFilled()) {
+                buyOrders.poll();
+            }
+            if (sellOrder.isFilled()) {
+                sellOrders.poll();
+            }
         }
     }
 
     @Override
     public boolean cancelOrder(Long orderId) {
-        boolean removed = buyOrders.removeIf(order -> order.getId().equals(orderId))
-                || sellOrders.removeIf(order -> order.getId().equals(orderId));
-        if (removed) {
-            kafkaEventPublisher.publish("ORDER_CANCELLED", String.format("Order cancelled: %s", orderId));
+        Optional<Order> orderToCancel = buyOrders.stream()
+                .filter(order -> order.getId().equals(orderId))
+                .findFirst();
+
+        if (orderToCancel.isPresent()) {
+            orderToCancel.get().cancel();
+            buyOrders.remove(orderToCancel.get());
+            kafkaEventPublisher.publish(ORDER_CANCELLED,
+                    String.format("Order cancelled: %s", orderId));
+            return true;
         }
 
-        return removed;
+        return false;
     }
 
     @Override
     public void initializeOrderBook(String symbol, int limit) {
         OrderBookDto orderBook = binanceApiClient.getOrderBook(symbol, limit);
 
-        logger.info(orderBook.toString());
+        buyOrders.clear();
+        sellOrders.clear();
+
+        orderBook.getBids().forEach(bid -> buyOrders.add(new Order(
+                null, OrderType.BUY, bid.getQuantity(), bid.getPrice(), OrderStatus.NEW, OrderSourceType.BINANCE
+        )));
+        orderBook.getAsks().forEach(ask -> sellOrders.add(new Order(
+                null, OrderType.SELL, ask.getQuantity(), ask.getPrice(), OrderStatus.NEW, OrderSourceType.BINANCE
+        )));
+
+        logger.info("Order Book initialized: {}", orderBook);
     }
 
     @Override

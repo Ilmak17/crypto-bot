@@ -11,6 +11,5 @@ public interface ExchangerService {
     void executeOrders();
     void getOrderBook();
     boolean cancelOrder(Long orderId);
-    void initializeOrderBook(String symbol, int limit);
     void stopAutoUpdate();
 }

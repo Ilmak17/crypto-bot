@@ -5,15 +5,13 @@ import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.api.dto.PlaceOrderDto;
 import com.trading.bot.api.mapper.OrderBookDtoMapper;
 import com.trading.bot.api.util.BinanceSignature;
+import com.trading.bot.model.enums.Symbol;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 
 public class BinanceApiClientBean implements BinanceApiClient {
     private static final String BINANCE_BASE_URL = "https://api.binance.com";
@@ -43,8 +41,8 @@ public class BinanceApiClientBean implements BinanceApiClient {
     }
 
     @Override
-    public OrderBookDto getOrderBook(String symbol, int limit) {
-        String url = String.format("%s/api/v3/depth?symbol=%s&limit=%d", BINANCE_BASE_URL, symbol, limit);
+    public OrderBookDto getOrderBook(Symbol market, int limit) {
+        String url = String.format("%s/api/v3/depth?symbol=%s&limit=%d", BINANCE_BASE_URL, market, limit);
 
         try {
             HttpClient client = HttpClient.newHttpClient();

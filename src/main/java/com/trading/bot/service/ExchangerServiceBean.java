@@ -36,12 +36,13 @@ public class ExchangerServiceBean implements ExchangerService {
 
     private static final Logger logger = LoggerFactory.getLogger(ExchangerServiceBean.class);
 
-    public ExchangerServiceBean() {
+    public ExchangerServiceBean(Symbol market) {
         buyOrders = new PriorityQueue<>((o1, o2) -> Double.compare(o2.getPrice(), o1.getPrice()));
         sellOrders = new PriorityQueue<>(Comparator.comparingDouble(Order::getPrice));
         kafkaEventPublisher = new KafkaEventPublisher("");
         binanceApiClient = new BinanceApiClientBean();
-        startAutoUpdateOrderBook();
+
+        startAutoUpdateOrderBook(market);
     }
 
     @Override
@@ -116,8 +117,18 @@ public class ExchangerServiceBean implements ExchangerService {
     }
 
     @Override
-    public void initializeOrderBook(String symbol, int limit) {
-        OrderBookDto orderBook = binanceApiClient.getOrderBook(symbol, limit);
+    public void stopAutoUpdate() {
+        scheduler.shutdown();
+    }
+
+    private void startAutoUpdateOrderBook(Symbol market) {
+        scheduler.scheduleAtFixedRate(() ->
+                        initializeOrderBook(market),
+                0, 10, TimeUnit.SECONDS);
+    }
+
+    private void initializeOrderBook(Symbol symbol) {
+        OrderBookDto orderBook = binanceApiClient.getOrderBook(symbol, 10);
 
         buyOrders.clear();
         sellOrders.clear();
@@ -133,23 +144,12 @@ public class ExchangerServiceBean implements ExchangerService {
     }
 
     @Override
-    public void stopAutoUpdate() {
-        scheduler.shutdown();
-    }
-
-    private void startAutoUpdateOrderBook() {
-        scheduler.scheduleAtFixedRate(() ->
-                        initializeOrderBook(Symbol.BTCUSDT.toString(), 10),
-                0, 10, TimeUnit.SECONDS);
-    }
-
-    @Override
     public void getOrderBook() {
         logger.info("Buy Orders: ");
-        buyOrders.forEach(order -> logger.info(String.format("ID: %s, Price: %.2f, Quantity: %.6f, Status: %s%n",
-                order.getId(), order.getPrice(), order.getQuantity(), order.getStatus())));
+        buyOrders.forEach(order -> logger.info("ID: {}, Price: {}, Quantity: {}, Status: {}",
+                order.getId(), order.getPrice(), order.getQuantity(), order.getStatus()));
         logger.info("Sell Orders: ");
-        sellOrders.forEach(order -> logger.info(String.format("ID: %s, Price: %.2f, Quantity: %.6f, Status: %s%n",
-                order.getId(), order.getPrice(), order.getQuantity(), order.getStatus())));
+        sellOrders.forEach(order -> logger.info("ID: {}, Price: {}, Quantity: {}, Status: {}",
+                order.getId(), order.getPrice(), order.getQuantity(), order.getStatus()));
     }
 }

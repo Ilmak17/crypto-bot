@@ -4,6 +4,7 @@ import com.trading.bot.api.dto.CancelOrderDto;
 import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.api.dto.PlaceOrderDto;
 import com.trading.bot.api.mapper.OrderBookDtoMapper;
+import com.trading.bot.api.util.BinanceSignature;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -72,7 +73,7 @@ public class BinanceApiClientBean implements BinanceApiClient {
                     dto.getSymbol(), dto.getSide(), dto.getType(), dto.getQuantity(), dto.getPrice(), timestamp
             );
 
-            String signature = generateSignature(query, secretKey);
+            String signature = BinanceSignature.generateSignature(query, secretKey);
             String url = String.format("%s/api/v3/order?%s&signature=%s", BINANCE_BASE_URL, query, signature);
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -97,7 +98,7 @@ public class BinanceApiClientBean implements BinanceApiClient {
             String query = String.format("symbol=%s&orderId=%s&timestamp=%d", dto.getSymbol(),
                     dto.getOrderId(), timestamp);
 
-            String signature = generateSignature(query, secretKey);
+            String signature = BinanceSignature.generateSignature(query, secretKey);
             String url = String.format("%s/api/v3/order?%s&signature=%s", BINANCE_BASE_URL, query, signature);
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -125,23 +126,5 @@ public class BinanceApiClientBean implements BinanceApiClient {
         int endIndex = json.indexOf("\"", startIndex);
 
         return json.substring(startIndex, endIndex);
-    }
-
-    private static String generateSignature(String data, String secretKey) {
-        try {
-            Mac hmacSha256 = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            hmacSha256.init(secretKeySpec);
-            byte[] hash = hmacSha256.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Error generating HMAC-SHA256 signature", e);
-        }
     }
 }

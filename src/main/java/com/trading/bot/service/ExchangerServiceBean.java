@@ -3,9 +3,9 @@ package com.trading.bot.service;
 import com.trading.bot.api.BinanceApiClient;
 import com.trading.bot.api.BinanceApiClientBean;
 import com.trading.bot.api.dto.OrderBookDto;
+import com.trading.bot.bots.Bot;
 import com.trading.bot.event.KafkaEventPublisher;
 import com.trading.bot.model.Order;
-import com.trading.bot.model.enums.OrderEvent;
 import com.trading.bot.model.enums.OrderSourceType;
 import com.trading.bot.model.enums.OrderStatus;
 import com.trading.bot.model.enums.OrderType;
@@ -13,7 +13,9 @@ import com.trading.bot.model.enums.Symbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.concurrent.Executors;
@@ -30,6 +32,7 @@ public class ExchangerServiceBean implements ExchangerService {
     private final KafkaEventPublisher kafkaEventPublisher;
     private final BinanceApiClient binanceApiClient;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final List<Bot> bots = new ArrayList<>();
 
     private static final Logger logger = LoggerFactory.getLogger(ExchangerServiceBean.class);
 
@@ -39,6 +42,20 @@ public class ExchangerServiceBean implements ExchangerService {
         kafkaEventPublisher = new KafkaEventPublisher("");
         binanceApiClient = new BinanceApiClientBean();
         startAutoUpdateOrderBook();
+    }
+
+    @Override
+    public void registerBot(Bot bot) {
+        bot.setExchangerService(this);
+        bots.add(bot);
+    }
+
+    @Override
+    public void startBots() {
+        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
+            double price = binanceApiClient.getPrice();
+            bots.forEach(bot -> bot.performAction(price));
+        }, 0, 10, TimeUnit.SECONDS);
     }
 
     @Override

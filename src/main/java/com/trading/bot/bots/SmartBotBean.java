@@ -1,7 +1,9 @@
 package com.trading.bot.bots;
 
-import com.trading.bot.model.Transaction;
+import com.trading.bot.model.Order;
+import com.trading.bot.model.enums.OrderStatus;
 import com.trading.bot.model.enums.OrderType;
+import com.trading.bot.service.ExchangerService;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -13,16 +15,17 @@ public class SmartBotBean implements Bot {
     private final String name;
     private double usdtBalance;
     private double btcBalance;
-    private final List<Transaction> transactions;
+    private final List<Order> orderHistory;
     private final Queue<Double> priceHistory;
     private static final Double COMMISSION = 0.001;
     private final Random random;
+    private ExchangerService exchangerService;
 
     public SmartBotBean(String name, double usdtBalance) {
         this.name = name;
         this.usdtBalance = usdtBalance;
         this.btcBalance = 0.0;
-        transactions = new ArrayList<>();
+        orderHistory = new ArrayList<>();
         priceHistory = new LinkedList<>();
         random = new Random();
     }
@@ -34,14 +37,13 @@ public class SmartBotBean implements Bot {
         }
         priceHistory.offer(price);
 
-        // volume in market
         double tradeVolume = random.nextDouble(5000);
         boolean isTrendingUp = isTrendingUp(priceHistory);
 
         if (!isTrendingUp && usdtBalance > 0 && tradeVolume > 2500) {
-            buy(price);
+            placeOrder(price, OrderType.BUY);
         } else if (isTrendingUp && btcBalance > 0 && tradeVolume > 2500) {
-            sell(price);
+            placeOrder(price, OrderType.SELL);
         } else {
             System.out.println(name + " decided to skip.");
         }
@@ -53,8 +55,8 @@ public class SmartBotBean implements Bot {
     }
 
     @Override
-    public List<Transaction> getTransactionHistory() {
-        return transactions;
+    public List<Order> getOrderHistory() {
+        return orderHistory;
     }
 
     @Override
@@ -67,29 +69,39 @@ public class SmartBotBean implements Bot {
         return btcBalance;
     }
 
-    private void buy(double price) {
-        double spendAmount = usdtBalance * 0.5;
-        if (spendAmount > 0) {
-            double btcBought = spendAmount / price;
-            btcBought *= (1 - COMMISSION);
-            usdtBalance -= spendAmount;
-            btcBalance += btcBought;
-
-            transactions.add(new Transaction(OrderType.BUY, price, btcBought, spendAmount));
-            System.out.printf("%s bought %.6f BTC for %.2f USDT.%n", name, btcBought, spendAmount);
-        }
+    @Override
+    public void setExchangerService(ExchangerService exchangerService) {
+        this.exchangerService = exchangerService;
     }
 
-    private void sell(double price) {
-        double btcToSell = btcBalance * 0.5;
-        if (btcToSell > 0) {
-            double earnedUsdt = btcToSell * price;
-            earnedUsdt *= (1 - COMMISSION);
-            btcBalance -= btcToSell;
-            usdtBalance += earnedUsdt;
+    private void placeOrder(double price, OrderType type) {
+        double amount = (type == OrderType.BUY) ? usdtBalance * 0.5 / price : btcBalance * 0.5;
+        if (amount <= 0) return;
 
-            transactions.add(new Transaction(OrderType.SELL, price, btcToSell, earnedUsdt));
-            System.out.printf("%s sold %.6f BTC for %.2f USDT.%n", name, btcToSell, earnedUsdt);
+        if (type == OrderType.BUY) {
+            usdtBalance -= amount * price;
+            btcBalance += amount * (1 - COMMISSION);
+        } else {
+            btcBalance -= amount;
+            usdtBalance += amount * price * (1 - COMMISSION);
         }
+
+        Order order = new Order(
+                System.nanoTime(), type, amount, price, OrderStatus.NEW, null
+        );
+
+        orderHistory.add(order);
+        exchangerService.placeOrder(order);
+        System.out.printf("%s placed %s order: %.6f BTC @ %.2f%n", name, type, amount, price);
+    }
+
+    private boolean isTrendingUp(Queue<Double> priceHistory) {
+        if (priceHistory.size() < 2) return false;
+
+        double[] prices = priceHistory.stream().mapToDouble(Double::doubleValue).toArray();
+        for (int i = 1; i < prices.length; i++) {
+            if (prices[i] <= prices[i - 1]) return false;
+        }
+        return true;
     }
 }

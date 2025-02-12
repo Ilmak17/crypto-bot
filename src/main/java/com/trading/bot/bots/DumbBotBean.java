@@ -1,8 +1,10 @@
 package com.trading.bot.bots;
 
 
-import com.trading.bot.model.Transaction;
+import com.trading.bot.model.Order;
+import com.trading.bot.model.enums.OrderStatus;
 import com.trading.bot.model.enums.OrderType;
+import com.trading.bot.service.ExchangerService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,22 +15,23 @@ public class DumbBotBean implements Bot {
     private double usdtBalance;
     private double btcBalance;
     private final Random random;
-    private final List<Transaction> transactions;
+    private final List<Order> orderHistory;
+    private ExchangerService exchangerService;
 
     public DumbBotBean(String name, double usdtBalance) {
         this.name = name;
         this.usdtBalance = usdtBalance;
         this.btcBalance = 0.0;
         random = new Random();
-        transactions = new ArrayList<>();
+        orderHistory = new ArrayList<>();
     }
 
     @Override
     public void performAction(double price) {
         switch (random.nextInt(3)) {
             case 0 -> System.out.println(name + " decided to skip.");
-            case 1 -> buy(price);
-            case 2 -> sell(price);
+            case 1 -> placeOrder(price, OrderType.BUY);
+            case 2 -> placeOrder(price, OrderType.SELL);
             default -> System.out.println("Error has occurred");
         }
     }
@@ -39,8 +42,8 @@ public class DumbBotBean implements Bot {
     }
 
     @Override
-    public List<Transaction> getTransactionHistory() {
-        return transactions;
+    public List<Order> getOrderHistory() {
+        return orderHistory;
     }
 
     @Override
@@ -53,28 +56,32 @@ public class DumbBotBean implements Bot {
         return btcBalance;
     }
 
-    private void buy(double price) {
-        double spendAmount = random.nextDouble(usdtBalance);
-        if (spendAmount > 0) {
-            double btcBought = spendAmount / price;
-            usdtBalance -= spendAmount;
-            btcBalance += btcBought;
-
-            transactions.add(new Transaction(OrderType.BUY, price, btcBought, spendAmount));
-            System.out.printf("%s bought %.6f BTC for %.2f USDT.%n", name, btcBought, spendAmount);
-        }
+    @Override
+    public void setExchangerService(ExchangerService exchangerService) {
+        this.exchangerService = exchangerService;
     }
 
-    private void sell(double price) {
-        double btcToSell = random.nextDouble(btcBalance);
-        if (btcToSell > 0) {
-            double earnedUsdt = btcToSell * price;
-            btcBalance -= btcToSell;
-            usdtBalance += earnedUsdt;
+    private void placeOrder(double price, OrderType type) {
+        double amount;
 
-            transactions.add(new Transaction(OrderType.SELL, price, btcToSell, earnedUsdt));
-            System.out.printf("%s sold %.6f BTC for %.2f USDT.%n", name, btcToSell, earnedUsdt);
+        if (type == OrderType.BUY) {
+            amount = random.nextDouble(usdtBalance / price);
+            if (amount <= 0) return;
+            usdtBalance -= amount * price;
+            btcBalance += amount;
+        } else {
+            amount = random.nextDouble(btcBalance);
+            if (amount <= 0) return;
+            btcBalance -= amount;
+            usdtBalance += amount * price;
         }
-    }
 
+        Order order = new Order(
+                System.nanoTime(), type, amount, price, OrderStatus.NEW, null
+        );
+
+        orderHistory.add(order);
+        exchangerService.placeOrder(order);
+        System.out.printf("%s placed %s order: %.6f BTC @ %.2f%n", name, type, amount, price);
+    }
 }

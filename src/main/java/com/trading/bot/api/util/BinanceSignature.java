@@ -1,9 +1,12 @@
 package com.trading.bot.api.util;
 
+import lombok.experimental.UtilityClass;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
+@UtilityClass
 public class BinanceSignature {
     public static String generateSignature(String data, String secretKey) {
         try {

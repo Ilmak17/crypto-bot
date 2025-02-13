@@ -4,6 +4,7 @@ import com.trading.bot.api.dto.CancelOrderDto;
 import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.api.dto.PlaceOrderDto;
 import com.trading.bot.api.mapper.OrderBookDtoMapper;
+import com.trading.bot.api.mapper.PriceDtoMapper;
 import com.trading.bot.api.util.BinanceSignature;
 import com.trading.bot.model.enums.Symbol;
 
@@ -18,23 +19,27 @@ public class BinanceApiClientBean implements BinanceApiClient {
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .connectTimeout(java.time.Duration.ofSeconds(5))
             .build();
-
-    private String secretKey = "";
-    private String apiKey = "";
+    private String secretKey = "test";
+    private String apiKey = "test";
 
     @Override
     public Double getPrice() {
         try {
+            String url = String.format("%s/api/v3/ticker/price?symbol=BTCUSDT", BINANCE_BASE_URL);
+
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BINANCE_BASE_URL))
+                    .uri(URI.create(url))
                     .GET()
                     .header("Content-Type", "application/json")
                     .build();
+
             HttpResponse<String> response = processRequest(request);
 
-            return response.statusCode() == 200
-                    ? Double.parseDouble(parsePriceFromJson(response.body()))
-                    : null;
+            if (response.statusCode() == 200) {
+                return new PriceDtoMapper().toPriceDto(response.body()).getPrice();
+            } else {
+                throw new RuntimeException("Error: Response Code " + response.statusCode());
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch price", e);
         }
@@ -45,13 +50,12 @@ public class BinanceApiClientBean implements BinanceApiClient {
         String url = String.format("%s/api/v3/depth?symbol=%s&limit=%d", BINANCE_BASE_URL, market, limit);
 
         try {
-            HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .GET()
                     .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = processRequest(request);
             if (response.statusCode() == 200) {
                 return new OrderBookDtoMapper().toOrderBookDto(response.body());
             } else {
@@ -80,9 +84,7 @@ public class BinanceApiClientBean implements BinanceApiClient {
                     .header("X-MBX-APIKEY", apiKey)
                     .build();
 
-            HttpClient client = HttpClient.newHttpClient();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
+            HttpResponse<String> response = processRequest(request);
             System.out.println("Order Response: " + response.body());
         } catch (Exception e) {
             throw new RuntimeException("Failed to place order", e);
@@ -105,9 +107,7 @@ public class BinanceApiClientBean implements BinanceApiClient {
                     .header("X-MBX-APIKEY", apiKey)
                     .build();
 
-            HttpClient client = HttpClient.newHttpClient();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
+            HttpResponse<String> response = processRequest(request);
             System.out.println("Cancel Order Response: " + response.body());
         } catch (Exception e) {
             throw new RuntimeException("Failed to cancel order", e);
@@ -116,13 +116,5 @@ public class BinanceApiClientBean implements BinanceApiClient {
 
     private HttpResponse<String> processRequest(HttpRequest request) throws IOException, InterruptedException {
         return HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    private String parsePriceFromJson(String json) {
-        String priceKey = "\"price\":\"";
-        int startIndex = json.indexOf(priceKey) + priceKey.length();
-        int endIndex = json.indexOf("\"", startIndex);
-
-        return json.substring(startIndex, endIndex);
     }
 }

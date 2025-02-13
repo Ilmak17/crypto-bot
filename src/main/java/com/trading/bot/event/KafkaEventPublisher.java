@@ -22,7 +22,7 @@ public class KafkaEventPublisher {
     }
 
     public void publish(OrderEvent key, String message) {
-        producer.send(new ProducerRecord<>(topic, key, message));
+       producer.send(new ProducerRecord<>(topic, key.toString(), message));
     }
 
     public void close() {

@@ -31,7 +31,7 @@ public class KafkaEventSubscriber {
         while (true) {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, String> record : records) {
-                System.out.printf("Received message: %s%n", record.value());
+                logger.info("Received message: {}", record.value());
             }
         }
     }

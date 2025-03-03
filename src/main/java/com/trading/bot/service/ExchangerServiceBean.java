@@ -22,9 +22,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.trading.bot.model.enums.OrderEvent.ORDER_CANCELLED;
-import static com.trading.bot.model.enums.OrderEvent.ORDER_FILLED;
-import static com.trading.bot.model.enums.OrderEvent.ORDER_PLACED;
+import static com.trading.bot.model.enums.Topic.ORDER_CANCELLED;
+import static com.trading.bot.model.enums.Topic.ORDER_FILLED;
+import static com.trading.bot.model.enums.Topic.ORDER_PLACED;
 
 public class ExchangerServiceBean implements ExchangerService {
     private final PriorityQueue<Order> buyOrders;
@@ -39,7 +39,7 @@ public class ExchangerServiceBean implements ExchangerService {
     public ExchangerServiceBean(Symbol market) {
         buyOrders = new PriorityQueue<>((o1, o2) -> Double.compare(o2.getPrice(), o1.getPrice()));
         sellOrders = new PriorityQueue<>(Comparator.comparingDouble(Order::getPrice));
-        kafkaEventPublisher = new KafkaEventPublisher("");
+        kafkaEventPublisher = new KafkaEventPublisher();
         binanceApiClient = new BinanceApiClientBean();
 
         startAutoUpdateOrderBook(market);

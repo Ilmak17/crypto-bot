@@ -1,6 +1,6 @@
 package com.trading.bot.event;
 
-import com.trading.bot.model.enums.OrderEvent;
+import com.trading.bot.model.enums.Topic;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -9,10 +9,8 @@ import java.util.Properties;
 
 public class KafkaEventPublisher {
     private final KafkaProducer<String, String> producer;
-    private final String topic;
 
-    public KafkaEventPublisher(String topic) {
-        this.topic = topic;
+    public KafkaEventPublisher() {
 
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
@@ -21,8 +19,9 @@ public class KafkaEventPublisher {
         producer = new KafkaProducer<>(props);
     }
 
-    public void publish(OrderEvent key, String message) {
-       producer.send(new ProducerRecord<>(topic, key.toString(), message));
+    public void publish(Topic topic, String message) {
+        producer.send(new ProducerRecord<>(topic.toString(), message));
+        producer.flush();
     }
 
     public void close() {

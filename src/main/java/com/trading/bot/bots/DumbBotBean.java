@@ -1,14 +1,21 @@
 package com.trading.bot.bots;
 
 
+import com.trading.bot.event.KafkaEventPublisher;
+import com.trading.bot.event.KafkaEventSubscriber;
 import com.trading.bot.model.Order;
 import com.trading.bot.model.enums.OrderStatus;
 import com.trading.bot.model.enums.OrderType;
 import com.trading.bot.service.ExchangerService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import static com.trading.bot.model.enums.Topic.ORDER_EVENTS;
+import static com.trading.bot.model.enums.Topic.PRICE_UPDATES;
 
 public class DumbBotBean implements Bot {
     private final String name;
@@ -17,28 +24,36 @@ public class DumbBotBean implements Bot {
     private final Random random;
     private final List<Order> orderHistory;
     private ExchangerService exchangerService;
+    private final KafkaEventPublisher kafkaEventPublisher;
+    private final KafkaEventSubscriber priceSubscriber;
+    private static final Logger logger = LoggerFactory.getLogger(DumbBotBean.class);
 
     public DumbBotBean(String name, double usdtBalance) {
         this.name = name;
         this.usdtBalance = usdtBalance;
         this.btcBalance = 0.0;
-        random = new Random();
-        orderHistory = new ArrayList<>();
+        this.random = new Random();
+        this.orderHistory = new java.util.ArrayList<>();
+        this.kafkaEventPublisher = new KafkaEventPublisher();
+        this.priceSubscriber = new KafkaEventSubscriber(PRICE_UPDATES.getTopicName(), this::onPriceUpdate);
+
+        this.priceSubscriber.listen();
     }
 
     @Override
     public void performAction(double price) {
-        switch (random.nextInt(3)) {
-            case 0 -> System.out.println(name + " decided to skip.");
+        int action = random.nextInt(3);
+        switch (action) {
+            case 0 -> logger.info("{} decided to skip.", name);
             case 1 -> placeOrder(price, OrderType.BUY);
             case 2 -> placeOrder(price, OrderType.SELL);
-            default -> System.out.println("Error has occurred");
+            default -> logger.warn("{} encountered an unexpected case.", name);
         }
     }
 
     @Override
     public void getBalance() {
-        System.out.printf("%s Balance: %.2f USDT | %.6f BTC%n", name, usdtBalance, btcBalance);
+        logger.info("{} Balance: {:.2f} USDT | {:.6f} BTC", name, usdtBalance, btcBalance);
     }
 
     @Override
@@ -62,16 +77,16 @@ public class DumbBotBean implements Bot {
     }
 
     private void placeOrder(double price, OrderType type) {
-        double amount;
+        double amount = (type == OrderType.BUY)
+                ? random.nextDouble(usdtBalance / price)
+                : random.nextDouble(btcBalance);
+
+        if (amount <= 0) return;
 
         if (type == OrderType.BUY) {
-            amount = random.nextDouble(usdtBalance / price);
-            if (amount <= 0) return;
             usdtBalance -= amount * price;
             btcBalance += amount;
         } else {
-            amount = random.nextDouble(btcBalance);
-            if (amount <= 0) return;
             btcBalance -= amount;
             usdtBalance += amount * price;
         }
@@ -82,6 +97,19 @@ public class DumbBotBean implements Bot {
 
         orderHistory.add(order);
         exchangerService.placeOrder(order);
-        System.out.printf("%s placed %s order: %.6f BTC @ %.2f%n", name, type, amount, price);
+
+        String orderMessage = String.format("%s placed %s order: %.6f BTC @ %.2f", name, type, amount, price);
+        logger.info(orderMessage);
+        kafkaEventPublisher.publish(ORDER_EVENTS, orderMessage);
+    }
+
+    private void onPriceUpdate(String message) {
+        try {
+            double price = Double.parseDouble(message.split(": ")[1]);
+            logger.info("{} received price update: {}", name, price);
+            performAction(price);
+        } catch (Exception e) {
+            logger.error("Failed to parse price update: {}", message, e);
+        }
     }
 }

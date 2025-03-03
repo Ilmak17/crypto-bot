@@ -22,53 +22,57 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.trading.bot.model.enums.Topic.ORDER_CANCELLED;
-import static com.trading.bot.model.enums.Topic.ORDER_FILLED;
-import static com.trading.bot.model.enums.Topic.ORDER_PLACED;
+import static com.trading.bot.model.enums.Topic.ORDER_EVENTS;
+import static com.trading.bot.model.enums.Topic.PRICE_UPDATES;
 
 public class ExchangerServiceBean implements ExchangerService {
     private final PriorityQueue<Order> buyOrders;
     private final PriorityQueue<Order> sellOrders;
     private final KafkaEventPublisher kafkaEventPublisher;
     private final BinanceApiClient binanceApiClient;
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    private final List<Bot> bots = new ArrayList<>();
+    private final ScheduledExecutorService scheduler;
+    private final List<Bot> bots;
 
     private static final Logger logger = LoggerFactory.getLogger(ExchangerServiceBean.class);
+    private final Symbol market;
 
     public ExchangerServiceBean(Symbol market) {
-        buyOrders = new PriorityQueue<>((o1, o2) -> Double.compare(o2.getPrice(), o1.getPrice()));
-        sellOrders = new PriorityQueue<>(Comparator.comparingDouble(Order::getPrice));
-        kafkaEventPublisher = new KafkaEventPublisher();
-        binanceApiClient = new BinanceApiClientBean();
+        this.market = market;
+        this.buyOrders = new PriorityQueue<>((o1, o2) -> Double.compare(o2.getPrice(), o1.getPrice()));
+        this.sellOrders = new PriorityQueue<>(Comparator.comparingDouble(Order::getPrice));
+        this.kafkaEventPublisher = new KafkaEventPublisher();
+        this.binanceApiClient = new BinanceApiClientBean();
+        this.scheduler = Executors.newScheduledThreadPool(1);
+        this.bots = new ArrayList<>();
 
-        startAutoUpdateOrderBook(market);
+        startAutoUpdateOrderBook();
     }
 
     @Override
     public void registerBot(Bot bot) {
         bot.setExchangerService(this);
         bots.add(bot);
+        logger.info("Bot registered: {}", bot.getClass().getSimpleName());
     }
 
     @Override
     public void startBots() {
         Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
             double price = binanceApiClient.getPrice();
+            kafkaEventPublisher.publish(PRICE_UPDATES, String.format("Market: %s, Price: %.2f", market, price));
             bots.forEach(bot -> bot.performAction(price));
         }, 0, 10, TimeUnit.SECONDS);
     }
 
     @Override
     public void placeOrder(Order order) {
-        Optional.of(order)
-                .map(Order::getType)
-                .filter(type -> type == OrderType.BUY)
-                .ifPresentOrElse(type -> buyOrders.add(order),
-                        () -> sellOrders.add(order));
+        if (order.getType() == OrderType.BUY) {
+            buyOrders.add(order);
+        } else {
+            sellOrders.add(order);
+        }
 
-        kafkaEventPublisher.publish(ORDER_PLACED, String.format("New order: %s", order));
-
+        kafkaEventPublisher.publish(ORDER_EVENTS, String.format("New order placed: %s", order));
         executeOrders();
     }
 
@@ -86,16 +90,12 @@ public class ExchangerServiceBean implements ExchangerService {
             buyOrder.fill(quantity);
             sellOrder.fill(quantity);
 
-            kafkaEventPublisher.publish(ORDER_FILLED,
+            kafkaEventPublisher.publish(ORDER_EVENTS,
                     String.format("Matched: BUY %.6f @ %.2f, SELL %.6f @ %.2f",
                             quantity, buyOrder.getPrice(), quantity, sellOrder.getPrice()));
 
-            if (buyOrder.isFilled()) {
-                buyOrders.poll();
-            }
-            if (sellOrder.isFilled()) {
-                sellOrders.poll();
-            }
+            if (buyOrder.isFilled()) buyOrders.poll();
+            if (sellOrder.isFilled()) sellOrders.poll();
         }
     }
 
@@ -103,12 +103,14 @@ public class ExchangerServiceBean implements ExchangerService {
     public boolean cancelOrder(Long orderId) {
         Optional<Order> orderToCancel = buyOrders.stream()
                 .filter(order -> order.getId().equals(orderId))
-                .findFirst();
+                .findFirst()
+                .or(() -> sellOrders.stream().filter(order -> order.getId().equals(orderId)).findFirst());
 
         if (orderToCancel.isPresent()) {
             orderToCancel.get().cancel();
             buyOrders.remove(orderToCancel.get());
-            kafkaEventPublisher.publish(ORDER_CANCELLED,
+            sellOrders.remove(orderToCancel.get());
+            kafkaEventPublisher.publish(ORDER_EVENTS,
                     String.format("Order cancelled: %s", orderId));
             return true;
         }
@@ -121,14 +123,12 @@ public class ExchangerServiceBean implements ExchangerService {
         scheduler.shutdown();
     }
 
-    private void startAutoUpdateOrderBook(Symbol market) {
-        scheduler.scheduleAtFixedRate(() ->
-                        initializeOrderBook(market),
-                0, 10, TimeUnit.SECONDS);
+    private void startAutoUpdateOrderBook() {
+        scheduler.scheduleAtFixedRate(this::initializeOrderBook, 0, 10, TimeUnit.SECONDS);
     }
 
-    private void initializeOrderBook(Symbol symbol) {
-        OrderBookDto orderBook = binanceApiClient.getOrderBook(symbol, 10);
+    private void initializeOrderBook() {
+        OrderBookDto orderBook = binanceApiClient.getOrderBook(market, 10);
 
         buyOrders.clear();
         sellOrders.clear();
@@ -140,6 +140,7 @@ public class ExchangerServiceBean implements ExchangerService {
                 null, OrderType.SELL, ask.getQuantity(), ask.getPrice(), OrderStatus.NEW, OrderSourceType.BINANCE
         )));
 
+        kafkaEventPublisher.publish(PRICE_UPDATES, "Updated order book: " + orderBook);
         logger.info("Order Book initialized: {}", orderBook);
     }
 

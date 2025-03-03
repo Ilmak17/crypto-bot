@@ -20,7 +20,7 @@ public class KafkaEventPublisher {
     }
 
     public void publish(Topic topic, String message) {
-        producer.send(new ProducerRecord<>(topic.toString(), message));
+        producer.send(new ProducerRecord<>(topic.getTopicName(), message));
         producer.flush();
     }
 

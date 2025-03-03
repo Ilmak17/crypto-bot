@@ -1,7 +1,7 @@
 package com.trading.bot.event;
 
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.slf4j.Logger;
@@ -14,7 +14,7 @@ import java.util.Properties;
 public class KafkaEventSubscriber {
     private static final Logger logger = LoggerFactory.getLogger(KafkaEventSubscriber.class);
 
-    private final KafkaConsumer<String, String> consumer;
+    private final Consumer<String, String> consumer;
 
     public KafkaEventSubscriber(String topic) {
         Properties props = new Properties();
@@ -28,11 +28,11 @@ public class KafkaEventSubscriber {
     }
 
     public void listen() {
-        while (true) {
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
-            for (ConsumerRecord<String, String> record : records) {
-                logger.info("Received message: {}", record.value());
+        new Thread(() -> {
+            while (true) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+                records.forEach(record -> logger.info("Received Kafka Event: {}", record.value()));
             }
-        }
+        }).start();
     }
 }

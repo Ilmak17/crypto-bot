@@ -24,7 +24,6 @@ public class DumbBotBean implements Bot {
     private final List<Order> orderHistory;
     private ExchangerService exchangerService;
     private final KafkaEventPublisher kafkaEventPublisher;
-    private final KafkaEventSubscriber priceSubscriber;
     private static final Logger logger = LoggerFactory.getLogger(DumbBotBean.class);
 
     public DumbBotBean(String name, double usdtBalance) {
@@ -34,9 +33,9 @@ public class DumbBotBean implements Bot {
         this.random = new Random();
         this.orderHistory = new java.util.ArrayList<>();
         this.kafkaEventPublisher = new KafkaEventPublisher();
-        this.priceSubscriber = new KafkaEventSubscriber(PRICE_UPDATES.getTopicName(), this::onPriceUpdate);
+        KafkaEventSubscriber priceSubscriber = new KafkaEventSubscriber(PRICE_UPDATES.getTopicName(), this::onPriceUpdate);
 
-        this.priceSubscriber.listen();
+        priceSubscriber.listen();
     }
 
     @Override

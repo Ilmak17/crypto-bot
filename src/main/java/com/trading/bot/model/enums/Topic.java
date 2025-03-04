@@ -1,5 +1,8 @@
 package com.trading.bot.model.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum Topic {
     PRICE_UPDATES("price-updates"),
     ORDER_EVENTS("order-events"),
@@ -11,7 +14,4 @@ public enum Topic {
         this.topicName = topicName;
     }
 
-    public String getTopicName() {
-        return topicName;
-    }
 }

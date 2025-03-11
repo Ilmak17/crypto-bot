@@ -40,7 +40,6 @@ public class TradingSimulatorServiceBean implements TradingSimulatorService {
                 double price = binanceApiClient.getPrice();
                 logger.info("Current BTC price: {}", price);
                 kafkaEventPublisher.publish(PRICE_UPDATES, "BTCUSDT: " + price);
-                bots.forEach(bot -> bot.performAction(price));
 
             } catch (Exception e) {
                 logger.error("Error fetching price from Binance", e);

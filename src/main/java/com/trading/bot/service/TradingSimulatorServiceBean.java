@@ -3,6 +3,7 @@ package com.trading.bot.service;
 import com.trading.bot.api.BinanceApiClient;
 import com.trading.bot.bots.Bot;
 import com.trading.bot.event.KafkaEventPublisher;
+import com.trading.bot.model.enums.Symbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +40,7 @@ public class TradingSimulatorServiceBean implements TradingSimulatorService {
             try {
                 double price = binanceApiClient.getPrice();
                 logger.info("Current BTC price: {}", price);
-                kafkaEventPublisher.publish(PRICE_UPDATES, "BTCUSDT: " + price);
-
+                kafkaEventPublisher.publish(PRICE_UPDATES, Symbol.BTCUSDT + ": " + price);
             } catch (Exception e) {
                 logger.error("Error fetching price from Binance", e);
             }

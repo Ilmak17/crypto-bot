@@ -33,7 +33,6 @@ public class TradingSimulatorServiceBean implements TradingSimulatorService {
     @Override
     public void start() {
         logger.info("Starting trading...");
-
         bots.forEach(bot -> bot.setExchangerService(exchangerService));
 
         scheduler.scheduleAtFixedRate(() -> {

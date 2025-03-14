@@ -9,8 +9,6 @@ public interface ExchangerService {
     void startBots();
     void placeOrder(Order order);
     void executeOrders();
-    void getOrderBook();
     boolean cancelOrder(Long orderId);
-
     void stopAutoUpdate();
 }

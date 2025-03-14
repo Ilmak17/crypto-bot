@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import static com.trading.bot.model.enums.Topic.ORDER_EVENTS;
 import static com.trading.bot.model.enums.Topic.PRICE_UPDATES;
 
-public class ExchangerServiceBean implements ExchangerService {
+public class  ExchangerServiceBean implements ExchangerService {
     private final PriorityQueue<Order> buyOrders;
     private final PriorityQueue<Order> sellOrders;
     private final KafkaEventPublisher kafkaEventPublisher;
@@ -142,15 +142,5 @@ public class ExchangerServiceBean implements ExchangerService {
 
         kafkaEventPublisher.publish(PRICE_UPDATES, "Updated order book: " + orderBook);
         logger.info("Order Book initialized: {}", orderBook);
-    }
-
-    @Override
-    public void getOrderBook() {
-        logger.info("Buy Orders: ");
-        buyOrders.forEach(order -> logger.info("ID: {}, Price: {}, Quantity: {}, Status: {}",
-                order.getId(), order.getPrice(), order.getQuantity(), order.getStatus()));
-        logger.info("Sell Orders: ");
-        sellOrders.forEach(order -> logger.info("ID: {}, Price: {}, Quantity: {}, Status: {}",
-                order.getId(), order.getPrice(), order.getQuantity(), order.getStatus()));
     }
 }

@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import static com.trading.bot.model.enums.Topic.ORDER_EVENTS;
 import static com.trading.bot.model.enums.Topic.PRICE_UPDATES;
 
-public class  ExchangerServiceBean implements ExchangerService {
+public class BinanceExchangerServiceBean implements ExchangerService {
     private final PriorityQueue<Order> buyOrders;
     private final PriorityQueue<Order> sellOrders;
     private final KafkaEventPublisher kafkaEventPublisher;
@@ -33,10 +33,10 @@ public class  ExchangerServiceBean implements ExchangerService {
     private final ScheduledExecutorService scheduler;
     private final List<Bot> bots;
 
-    private static final Logger logger = LoggerFactory.getLogger(ExchangerServiceBean.class);
+    private static final Logger logger = LoggerFactory.getLogger(BinanceExchangerServiceBean.class);
     private final Symbol market;
 
-    public ExchangerServiceBean(Symbol market) {
+    public BinanceExchangerServiceBean(Symbol market) {
         this.market = market;
         this.buyOrders = new PriorityQueue<>((o1, o2) -> Double.compare(o2.getPrice(), o1.getPrice()));
         this.sellOrders = new PriorityQueue<>(Comparator.comparingDouble(Order::getPrice));

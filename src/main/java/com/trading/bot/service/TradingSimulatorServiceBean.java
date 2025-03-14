@@ -16,13 +16,13 @@ import static com.trading.bot.model.enums.Topic.PRICE_UPDATES;
 
 public class TradingSimulatorServiceBean implements TradingSimulatorService {
     private final BinanceApiClient binanceApiClient;
-    private final ExchangerServiceBean exchangerService;
+    private final BinanceExchangerServiceBean exchangerService;
     private final ScheduledExecutorService scheduler;
     private final List<Bot> bots;
     private final KafkaEventPublisher kafkaEventPublisher;
     private static final Logger logger = LoggerFactory.getLogger(TradingSimulatorServiceBean.class);
 
-    public TradingSimulatorServiceBean(BinanceApiClient binanceApiClient, ExchangerServiceBean exchangerService, List<Bot> bots) {
+    public TradingSimulatorServiceBean(BinanceApiClient binanceApiClient, BinanceExchangerServiceBean exchangerService, List<Bot> bots) {
         this.binanceApiClient = binanceApiClient;
         this.exchangerService = exchangerService;
         this.bots = bots;

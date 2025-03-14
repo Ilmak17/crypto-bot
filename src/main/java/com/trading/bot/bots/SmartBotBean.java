@@ -24,7 +24,6 @@ public class SmartBotBean implements Bot {
     private final Random random;
     private ExchangerService exchangerService;
     private final KafkaEventPublisher kafkaEventPublisher;
-
     private static final Logger logger = LoggerFactory.getLogger(SmartBotBean.class);
 
     public SmartBotBean(String name, double usdtBalance) {

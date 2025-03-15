@@ -5,6 +5,7 @@ import com.binance.connector.client.impl.SpotClientImpl;
 import com.trading.bot.api.dto.CancelOrderDto;
 import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.api.dto.PlaceOrderDto;
+import com.trading.bot.api.mapper.OrderBookDtoMapper;
 import com.trading.bot.model.enums.Symbol;
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -38,16 +39,36 @@ public class BinanceApiClientBean implements BinanceApiClient {
 
     @Override
     public OrderBookDto getOrderBook(Symbol market, int limit) {
-        return null;
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+        params.put("symbol", market.toString());
+        params.put("limit", limit);
+
+        String response = client.createMarket().depth(params);
+
+        return new OrderBookDtoMapper().toOrderBookDto(response);
     }
 
     @Override
     public void placeOrder(PlaceOrderDto dto) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+        params.put("symbol", dto.getSymbol());
+        params.put("side", dto.getSide());
+        params.put("type", dto.getType());
+        params.put("quantity", dto.getQuantity());
+        params.put("price", dto.getPrice());
+        params.put("timeInForce", "GTC");
 
+        String response = client.createTrade().newOrder(params);
+        System.out.println("Testnet Order placed: " + response);
     }
 
     @Override
     public void cancelOrder(CancelOrderDto dto) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+        params.put("symbol", dto.getSymbol());
+        params.put("orderId", dto.getOrderId());
 
+        String response = client.createTrade().cancelOrder(params);
+        System.out.println("Testnet Order cancelled: " + response);
     }
 }

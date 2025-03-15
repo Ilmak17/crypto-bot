@@ -8,13 +8,15 @@ import com.trading.bot.api.dto.PlaceOrderDto;
 import com.trading.bot.model.enums.Symbol;
 import io.github.cdimascio.dotenv.Dotenv;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 
 public class BinanceApiClientBean implements BinanceApiClient {
     private static final Dotenv dotenv = Dotenv.load();
-    private static final String BASE_URL = dotenv.get("BINANCE_BASE_URL");
 
+    private static final String BASE_URL = dotenv.get("BINANCE_BASE_URL");
     private static final String API_KEY = dotenv.get("BINANCE_API_KEY");
     private static final String SECRET_KEY = dotenv.get("BINANCE_SECRET_KEY");
 
@@ -23,18 +25,15 @@ public class BinanceApiClientBean implements BinanceApiClient {
     public BinanceApiClientBean() {
         this.client = new SpotClientImpl(API_KEY, SECRET_KEY, BASE_URL);
     }
-    public void getTestBalance() {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
-        params.put("symbol", Symbol.BTCUSDT.toString());
-        params.put("limit", 10);
-
-        String response = client.createMarket().depth(params);
-        System.out.println(response);
-    }
 
     @Override
     public Double getPrice() {
-        return 0.0;
+        Map<String, Object> map = new HashMap<>();
+        map.put("symbol", Symbol.BTCUSDT.toString());
+
+        String response = client.createMarket().tickerSymbol(map);
+
+        return Double.parseDouble(response);
     }
 
     @Override

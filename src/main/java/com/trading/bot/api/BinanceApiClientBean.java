@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-
 public class BinanceApiClientBean implements BinanceApiClient {
     private static final Dotenv dotenv = Dotenv.load();
 

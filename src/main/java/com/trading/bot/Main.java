@@ -2,6 +2,7 @@ package com.trading.bot;
 
 import com.trading.bot.api.BinanceApiClient;
 import com.trading.bot.api.BinanceApiClientBean;
+import com.trading.bot.api.dto.CancelOrderDto;
 import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.api.dto.PlaceOrderDto;
 import com.trading.bot.model.enums.Symbol;
@@ -29,6 +30,6 @@ public class Main {
         binanceClient.placeOrder(orderDto);
 
         System.out.println("\nCancelling order...");
-        // binanceClient.cancelOrder(new CancelOrderDto(Symbol.BTCUSDT.toString(), "order_id"));
+         binanceClient.cancelOrder(new CancelOrderDto(Symbol.BTCUSDT.toString(), "order_id"));
     }
 }

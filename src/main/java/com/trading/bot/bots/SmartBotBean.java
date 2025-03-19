@@ -36,8 +36,8 @@ public class SmartBotBean implements Bot {
         this.random = new Random();
         this.kafkaEventPublisher = new KafkaEventPublisher();
 
-        KafkaEventSubscriber priceSubscriber = new KafkaEventSubscriber(PRICE_UPDATES.getTopicName(), this::onPriceUpdate);
-        priceSubscriber.listen();
+        new KafkaEventSubscriber(PRICE_UPDATES.getTopicName(), this::onPriceUpdate).listen();
+        new KafkaEventSubscriber(ORDER_EVENTS.getTopicName(), this::onOrderEvent).listen();
     }
 
     @Override
@@ -126,5 +126,9 @@ public class SmartBotBean implements Bot {
         } catch (Exception e) {
             logger.error("Failed to parse price update: {}", message, e);
         }
+    }
+
+    private void onOrderEvent(String message) {
+        logger.info("{} received order update: {}", name, message);
     }
 }

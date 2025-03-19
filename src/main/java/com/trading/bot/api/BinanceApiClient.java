@@ -1,17 +1,28 @@
 package com.trading.bot.api;
 
-import com.trading.bot.api.dto.CancelOrderDto;
 import com.trading.bot.api.dto.OrderBookDto;
-import com.trading.bot.api.dto.PlaceOrderDto;
 import com.trading.bot.model.enums.Symbol;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
+
+import static java.util.Objects.nonNull;
 
 public interface BinanceApiClient {
 
-    Double getPrice();
+    Double getPrice(Symbol symbol);
 
     OrderBookDto getOrderBook(Symbol market, int limit);
 
-    void placeOrder(PlaceOrderDto dto);
+    BiFunction<Symbol, Integer, Map<String, Object>> toRequest = (symbol, limit) -> {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("symbol", symbol.toString());
 
-    void cancelOrder(CancelOrderDto dto);
+        if (nonNull(limit)) {
+            params.put("limit", limit);
+        }
+
+        return params;
+    };
 }

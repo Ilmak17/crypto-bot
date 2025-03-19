@@ -3,7 +3,6 @@ package com.trading.bot.service;
 import com.trading.bot.api.BinanceApiClient;
 import com.trading.bot.api.BinanceApiClientBean;
 import com.trading.bot.api.dto.OrderBookDto;
-import com.trading.bot.bots.Bot;
 import com.trading.bot.event.KafkaEventPublisher;
 import com.trading.bot.model.Order;
 import com.trading.bot.model.enums.OrderSourceType;
@@ -13,9 +12,7 @@ import com.trading.bot.model.enums.Symbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.concurrent.Executors;
@@ -46,7 +43,6 @@ public class ExchangerServiceBean implements ExchangerService {
         startAutoUpdateOrderBook();
     }
 
-
     @Override
     public void placeOrder(Order order) {
         if (order.getType() == OrderType.BUY) {
@@ -65,17 +61,24 @@ public class ExchangerServiceBean implements ExchangerService {
             Order buyOrder = buyOrders.peek();
             Order sellOrder = sellOrders.peek();
 
-            if (buyOrder.getPrice() < sellOrder.getPrice()) {
+            double marketPrice = binanceApiClient.getPrice(market);
+
+            if (buyOrder.getPrice() < sellOrder.getPrice() || buyOrder.getPrice() < marketPrice) {
+                logger.info("No matching orders. Market price: {}", marketPrice);
                 break;
             }
 
             double quantity = Math.min(buyOrder.getQuantity(), sellOrder.getQuantity());
+
             buyOrder.fill(quantity);
             sellOrder.fill(quantity);
 
             kafkaEventPublisher.publish(ORDER_EVENTS,
-                    String.format("Matched: BUY %.6f @ %.2f, SELL %.6f @ %.2f",
-                            quantity, buyOrder.getPrice(), quantity, sellOrder.getPrice()));
+                    String.format("Matched: BUY %.6f @ %.2f, SELL %.6f @ %.2f (Market: %.2f)",
+                            quantity, buyOrder.getPrice(), quantity, sellOrder.getPrice(), marketPrice));
+
+            logger.info("Order filled: BUY {} BTC @ {}, SELL {} BTC @ {}",
+                    quantity, buyOrder.getPrice(), quantity, sellOrder.getPrice());
 
             if (buyOrder.isFilled()) buyOrders.poll();
             if (sellOrder.isFilled()) sellOrders.poll();

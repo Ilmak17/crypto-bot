@@ -16,7 +16,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class BinanceApiClientBean implements BinanceApiClient {
-    private static final Dotenv dotenv = Dotenv.load();
     private static final Logger logger = LoggerFactory.getLogger(BinanceApiClientBean.class);
     private static final SpotClient client;
 

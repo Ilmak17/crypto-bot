@@ -8,6 +8,8 @@ import com.trading.bot.api.dto.PlaceOrderDto;
 import com.trading.bot.api.mapper.OrderBookDtoMapper;
 import com.trading.bot.model.enums.Symbol;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -15,15 +17,26 @@ import java.util.Map;
 
 public class BinanceApiClientBean implements BinanceApiClient {
     private static final Dotenv dotenv = Dotenv.load();
+    private static final Logger logger = LoggerFactory.getLogger(BinanceApiClientBean.class);
 
     private static final String BASE_URL = dotenv.get("BINANCE_BASE_URL");
     private static final String API_KEY = dotenv.get("BINANCE_API_KEY");
     private static final String SECRET_KEY = dotenv.get("BINANCE_SECRET_KEY");
 
-    private final SpotClient client;
+    private static final SpotClient client;
 
-    public BinanceApiClientBean() {
-        this.client = new SpotClientImpl(API_KEY, SECRET_KEY, BASE_URL);
+    static {
+        Dotenv dotenv = Dotenv.load();
+        String baseUrl = dotenv.get("BINANCE_BASE_URL", "https://api.binance.com");
+        String apiKey = dotenv.get("BINANCE_API_KEY");
+        String secretKey = dotenv.get("BINANCE_SECRET_KEY");
+
+        if (apiKey == null || secretKey == null) {
+            throw new IllegalStateException("Missing Binance API credentials in .env file");
+        }
+
+        client = new SpotClientImpl(apiKey, secretKey, baseUrl);
+        logger.info("Binance API Client initialized with base URL: {}", baseUrl);
     }
 
     @Override

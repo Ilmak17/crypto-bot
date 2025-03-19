@@ -18,11 +18,6 @@ import java.util.Map;
 public class BinanceApiClientBean implements BinanceApiClient {
     private static final Dotenv dotenv = Dotenv.load();
     private static final Logger logger = LoggerFactory.getLogger(BinanceApiClientBean.class);
-
-    private static final String BASE_URL = dotenv.get("BINANCE_BASE_URL");
-    private static final String API_KEY = dotenv.get("BINANCE_API_KEY");
-    private static final String SECRET_KEY = dotenv.get("BINANCE_SECRET_KEY");
-
     private static final SpotClient client;
 
     static {
@@ -41,27 +36,70 @@ public class BinanceApiClientBean implements BinanceApiClient {
 
     @Override
     public Double getPrice() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("symbol", Symbol.BTCUSDT.toString());
-
-        String response = client.createMarket().tickerSymbol(map);
-
-        return Double.parseDouble(response);
+        try {
+            Map<String, Object> params = createSymbolParams(Symbol.BTCUSDT);
+            String response = client.createMarket().tickerSymbol(params);
+            Double price = Double.parseDouble(response);
+            logger.info("Fetched BTC price: {}", price);
+            return price;
+        } catch (Exception e) {
+            logger.error("Failed to fetch BTC price", e);
+            return null;
+        }
     }
 
     @Override
     public OrderBookDto getOrderBook(Symbol market, int limit) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
-        params.put("symbol", market.toString());
-        params.put("limit", limit);
-
-        String response = client.createMarket().depth(params);
-
-        return new OrderBookDtoMapper().toOrderBookDto(response);
+        try {
+            LinkedHashMap<String, Object> params = createOrderBookParams(market, limit);
+            String response = client.createMarket().depth(params);
+            OrderBookDto orderBook = new OrderBookDtoMapper().toOrderBookDto(response);
+            logger.info("Fetched order book for {}: {}", market, orderBook);
+            return orderBook;
+        } catch (Exception e) {
+            logger.error("Failed to fetch order book for {}", market, e);
+            return null;
+        }
     }
 
     @Override
     public void placeOrder(PlaceOrderDto dto) {
+        try {
+            LinkedHashMap<String, Object> params = createOrderParams(dto);
+            String response = client.createTrade().newOrder(params);
+            logger.info("Order placed: {}", response);
+        } catch (Exception e) {
+            logger.error("Failed to place order: {}", dto, e);
+        }
+    }
+
+    @Override
+    public void cancelOrder(CancelOrderDto dto) {
+        try {
+            LinkedHashMap<String, Object> params = createCancelOrderParams(dto);
+            String response = client.createTrade().cancelOrder(params);
+            logger.info("Order cancelled: {}", response);
+        } catch (Exception e) {
+            logger.error("Failed to cancel order: {}", dto, e);
+        }
+    }
+
+    private Map<String, Object> createSymbolParams(Symbol symbol) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("symbol", symbol.toString());
+
+        return params;
+    }
+
+    private LinkedHashMap<String, Object> createOrderBookParams(Symbol market, int limit) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+        params.put("symbol", market.toString());
+        params.put("limit", limit);
+
+        return params;
+    }
+
+    private LinkedHashMap<String, Object> createOrderParams(PlaceOrderDto dto) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
         params.put("symbol", dto.getSymbol());
         params.put("side", dto.getSide());
@@ -70,17 +108,14 @@ public class BinanceApiClientBean implements BinanceApiClient {
         params.put("price", dto.getPrice());
         params.put("timeInForce", "GTC");
 
-        String response = client.createTrade().newOrder(params);
-        System.out.println("Testnet Order placed: " + response);
+        return params;
     }
 
-    @Override
-    public void cancelOrder(CancelOrderDto dto) {
+    private LinkedHashMap<String, Object> createCancelOrderParams(CancelOrderDto dto) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
         params.put("symbol", dto.getSymbol());
         params.put("orderId", dto.getOrderId());
 
-        String response = client.createTrade().cancelOrder(params);
-        System.out.println("Testnet Order cancelled: " + response);
+        return params;
     }
 }

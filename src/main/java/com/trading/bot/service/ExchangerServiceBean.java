@@ -31,7 +31,6 @@ public class ExchangerServiceBean implements ExchangerService {
     private final KafkaEventPublisher kafkaEventPublisher;
     private final BinanceApiClient binanceApiClient;
     private final ScheduledExecutorService scheduler;
-    private final List<Bot> bots;
 
     private static final Logger logger = LoggerFactory.getLogger(ExchangerServiceBean.class);
     private final Symbol market;
@@ -43,26 +42,10 @@ public class ExchangerServiceBean implements ExchangerService {
         this.kafkaEventPublisher = new KafkaEventPublisher();
         this.binanceApiClient = new BinanceApiClientBean();
         this.scheduler = Executors.newScheduledThreadPool(1);
-        this.bots = new ArrayList<>();
 
         startAutoUpdateOrderBook();
     }
 
-    @Override
-    public void registerBot(Bot bot) {
-        bot.setExchangerService(this);
-        bots.add(bot);
-        logger.info("Bot registered: {}", bot.getClass().getSimpleName());
-    }
-
-    @Override
-    public void startBots() {
-        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
-            double price = binanceApiClient.getPrice();
-            kafkaEventPublisher.publish(PRICE_UPDATES, String.format("Market: %s, Price: %.2f", market, price));
-            bots.forEach(bot -> bot.performAction(price));
-        }, 0, 10, TimeUnit.SECONDS);
-    }
 
     @Override
     public void placeOrder(Order order) {

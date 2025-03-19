@@ -37,7 +37,7 @@ public class TradingSimulatorServiceBean implements TradingSimulatorService {
 
         scheduler.scheduleAtFixedRate(() -> {
             try {
-                double price = binanceApiClient.getPrice();
+                double price = binanceApiClient.getPrice(Symbol.BTCUSDT);
                 logger.info("Current BTC price: {}", price);
                 kafkaEventPublisher.publish(PRICE_UPDATES, Symbol.BTCUSDT + ": " + price);
             } catch (Exception e) {

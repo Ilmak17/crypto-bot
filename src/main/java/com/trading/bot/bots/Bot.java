@@ -14,6 +14,4 @@ public interface Bot {
     Double getUsdtBalance();
 
     Double getBtcBalance();
-
-    void setExchangerService(ExchangerService exchangerService);
 }

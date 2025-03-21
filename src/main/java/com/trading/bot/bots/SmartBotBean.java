@@ -5,7 +5,6 @@ import com.trading.bot.event.KafkaEventSubscriber;
 import com.trading.bot.model.Order;
 import com.trading.bot.model.enums.OrderStatus;
 import com.trading.bot.model.enums.OrderType;
-import com.trading.bot.service.ExchangerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,7 +97,8 @@ public class SmartBotBean implements Bot {
 
         String orderMessage = String.format("%s placed %s order: %.6f BTC @ %.2f", name, type, amount, price);
         logger.info(orderMessage);
-        kafkaEventPublisher.publish(ORDER_EVENTS, orderMessage);
+
+        kafkaEventPublisher.publish(ORDER_EVENTS, order.toString());
     }
 
     private boolean isTrendingUp(Queue<Double> priceHistory) {

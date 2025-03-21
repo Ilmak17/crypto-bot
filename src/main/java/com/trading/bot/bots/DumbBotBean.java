@@ -6,7 +6,6 @@ import com.trading.bot.event.KafkaEventSubscriber;
 import com.trading.bot.model.Order;
 import com.trading.bot.model.enums.OrderStatus;
 import com.trading.bot.model.enums.OrderType;
-import com.trading.bot.service.ExchangerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +67,6 @@ public class DumbBotBean implements Bot {
         return btcBalance;
     }
 
-
     private void placeOrder(double price, OrderType type) {
         double amount = (type == OrderType.BUY)
                 ? random.nextDouble(usdtBalance / price)
@@ -89,7 +87,6 @@ public class DumbBotBean implements Bot {
         );
 
         orderHistory.add(order);
-        exchangerService.placeOrder(order);
 
         String orderMessage = String.format("%s placed %s order: %.6f BTC @ %.2f", name, type, amount, price);
         logger.info(orderMessage);

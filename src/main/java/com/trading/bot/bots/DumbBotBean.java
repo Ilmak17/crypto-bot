@@ -22,7 +22,6 @@ public class DumbBotBean implements Bot {
     private double btcBalance;
     private final Random random;
     private final List<Order> orderHistory;
-    private ExchangerService exchangerService;
     private final KafkaEventPublisher kafkaEventPublisher;
     private static final Logger logger = LoggerFactory.getLogger(DumbBotBean.class);
 
@@ -69,10 +68,6 @@ public class DumbBotBean implements Bot {
         return btcBalance;
     }
 
-    @Override
-    public void setExchangerService(ExchangerService exchangerService) {
-        this.exchangerService = exchangerService;
-    }
 
     private void placeOrder(double price, OrderType type) {
         double amount = (type == OrderType.BUY)

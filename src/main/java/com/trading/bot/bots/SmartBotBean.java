@@ -22,7 +22,6 @@ public class SmartBotBean implements Bot {
     private final Queue<Double> priceHistory;
     private static final double COMMISSION = 0.001;
     private final Random random;
-    private ExchangerService exchangerService;
     private final KafkaEventPublisher kafkaEventPublisher;
 
     private static final Logger logger = LoggerFactory.getLogger(SmartBotBean.class);
@@ -101,7 +100,6 @@ public class SmartBotBean implements Bot {
         );
 
         orderHistory.add(order);
-        exchangerService.placeOrder(order);
 
         String orderMessage = String.format("%s placed %s order: %.6f BTC @ %.2f", name, type, amount, price);
         logger.info(orderMessage);

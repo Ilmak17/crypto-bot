@@ -78,11 +78,6 @@ public class SmartBotBean implements Bot {
         return btcBalance;
     }
 
-    @Override
-    public void setExchangerService(ExchangerService exchangerService) {
-        this.exchangerService = exchangerService;
-    }
-
     private void placeOrder(double price, OrderType type) {
         double amount = (type == OrderType.BUY) ? usdtBalance * 0.5 / price : btcBalance * 0.5;
         if (amount <= 0) return;

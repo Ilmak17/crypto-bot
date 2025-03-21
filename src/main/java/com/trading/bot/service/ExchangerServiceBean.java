@@ -4,6 +4,7 @@ import com.trading.bot.api.BinanceApiClient;
 import com.trading.bot.api.BinanceApiClientBean;
 import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.event.KafkaEventPublisher;
+import com.trading.bot.event.KafkaEventSubscriber;
 import com.trading.bot.model.Order;
 import com.trading.bot.model.enums.OrderSourceType;
 import com.trading.bot.model.enums.OrderStatus;
@@ -41,6 +42,7 @@ public class ExchangerServiceBean implements ExchangerService {
         this.scheduler = Executors.newScheduledThreadPool(1);
 
         startAutoUpdateOrderBook();
+        new KafkaEventSubscriber(ORDER_EVENTS.getTopicName(), this::processOrder).listen();
     }
 
     @Override
@@ -128,5 +130,15 @@ public class ExchangerServiceBean implements ExchangerService {
 
         kafkaEventPublisher.publish(PRICE_UPDATES, "Updated order book: " + orderBook);
         logger.info("Order Book initialized: {}", orderBook);
+    }
+
+    private void processOrder(String message) {
+        try {
+            Order order = Order.fromString(message);
+            logger.info("Received order from Kafka: {}", order);
+            placeOrder(order);
+        } catch (Exception e) {
+            logger.error("Failed to process order: {}", message, e);
+        }
     }
 }

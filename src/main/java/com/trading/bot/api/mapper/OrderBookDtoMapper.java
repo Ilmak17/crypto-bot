@@ -12,7 +12,6 @@ import static java.util.Objects.isNull;
 public class OrderBookDtoMapper {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-
     @SneakyThrows
     public OrderBookDto toOrderBookDto(String json) {
         JsonNode root = objectMapper.readTree(json);
@@ -35,6 +34,7 @@ public class OrderBookDtoMapper {
             double quantity = entry.get(1).asDouble();
             entries.add(new OrderBookDto.OrderEntry(price, quantity));
         }
+
         return entries;
     }
 }

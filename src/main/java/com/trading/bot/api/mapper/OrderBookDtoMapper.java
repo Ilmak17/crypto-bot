@@ -3,10 +3,7 @@ package com.trading.bot.api.mapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trading.bot.api.dto.OrderBookDto;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
+import lombok.SneakyThrows;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,21 +12,16 @@ import static java.util.Objects.isNull;
 public class OrderBookDtoMapper {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final Logger logger = LoggerFactory.getLogger(OrderBookDtoMapper.class);
 
+    @SneakyThrows
     public OrderBookDto toOrderBookDto(String json) {
-        try {
-            JsonNode root = objectMapper.readTree(json);
-            long lastUpdateId = root.get("lastUpdateId").asLong();
+        JsonNode root = objectMapper.readTree(json);
+        long lastUpdateId = root.get("lastUpdateId").asLong();
 
-            List<OrderBookDto.OrderEntry> bids = parseOrderEntries(root.get("bids"));
-            List<OrderBookDto.OrderEntry> asks = parseOrderEntries(root.get("asks"));
+        List<OrderBookDto.OrderEntry> bids = parseOrderEntries(root.get("bids"));
+        List<OrderBookDto.OrderEntry> asks = parseOrderEntries(root.get("asks"));
 
-            return new OrderBookDto(lastUpdateId, bids, asks);
-        } catch (IOException e) {
-            logger.error("Error parsing JSON into OrderBookDto", e);
-            throw new RuntimeException(e);
-        }
+        return new OrderBookDto(lastUpdateId, bids, asks);
     }
 
     private List<OrderBookDto.OrderEntry> parseOrderEntries(JsonNode entriesNode) {

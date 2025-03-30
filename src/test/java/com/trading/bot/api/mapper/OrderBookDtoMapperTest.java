@@ -12,7 +12,7 @@ class OrderBookDtoMapperTest {
     private final OrderBookDtoMapper mapper = new OrderBookDtoMapper();
 
     @Test
-    void testToOrderBookDto_validJson() {
+    void testToOrderBookDtoValidJson() {
         String json = """
                 {
                   "lastUpdateId": 123456789,
@@ -43,7 +43,7 @@ class OrderBookDtoMapperTest {
     }
 
     @Test
-    void testToOrderBookDto_emptyBidsAsks() {
+    void testToOrderBookDtoEmptyBidsAsks() {
         String json = """
                 {
                   "lastUpdateId": 42,

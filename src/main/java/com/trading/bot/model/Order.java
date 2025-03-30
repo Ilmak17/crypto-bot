@@ -19,10 +19,6 @@ public class Order {
     private OrderStatus status;
     private OrderSourceType sourceType;
 
-    public boolean isFromBinance() {
-        return OrderSourceType.BINANCE.equals(sourceType);
-    }
-
     public void fill(Double amount) {
         if (amount > quantity) {
             throw new IllegalArgumentException("Amount exceeds quantity");

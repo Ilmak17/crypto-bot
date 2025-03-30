@@ -106,4 +106,10 @@ class OrderTest {
 
         assertEquals(original, parsed);
     }
+
+    @Test
+    void testInvalidStringFormat() {
+        String badString = "1,BUY,INVALID,10000,NEW,LOCAL";
+        assertThrows(IllegalArgumentException.class, () -> Order.fromString(badString));
+    }
 }

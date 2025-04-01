@@ -1,7 +1,6 @@
 package com.trading.bot.service;
 
 import com.trading.bot.api.BinanceApiClient;
-import com.trading.bot.api.BinanceApiClientBean;
 import com.trading.bot.api.dto.OrderBookDto;
 import com.trading.bot.event.KafkaEventPublisher;
 import com.trading.bot.event.KafkaEventSubscriber;
@@ -33,12 +32,13 @@ public class ExchangerServiceBean implements ExchangerService {
     private static final Logger logger = LoggerFactory.getLogger(ExchangerServiceBean.class);
     private final Symbol market;
 
-    public ExchangerServiceBean(Symbol market) {
+    public ExchangerServiceBean(Symbol market, BinanceApiClient binanceApiClient, KafkaEventPublisher kafkaEventPublisher) {
         this.market = market;
+        this.kafkaEventPublisher = kafkaEventPublisher;
+        this.binanceApiClient = binanceApiClient;
+
         this.buyOrders = new PriorityQueue<>((o1, o2) -> Double.compare(o2.getPrice(), o1.getPrice()));
         this.sellOrders = new PriorityQueue<>(Comparator.comparingDouble(Order::getPrice));
-        this.kafkaEventPublisher = new KafkaEventPublisher();
-        this.binanceApiClient = new BinanceApiClientBean();
         this.scheduler = Executors.newScheduledThreadPool(1);
 
         startAutoUpdateOrderBook();

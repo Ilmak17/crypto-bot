@@ -18,10 +18,10 @@ public class TradingSimulatorServiceBean implements TradingSimulatorService {
     private final KafkaEventPublisher kafkaEventPublisher;
     private static final Logger logger = LoggerFactory.getLogger(TradingSimulatorServiceBean.class);
 
-    public TradingSimulatorServiceBean(BinanceApiClient binanceApiClient) {
+    public TradingSimulatorServiceBean(BinanceApiClient binanceApiClient, KafkaEventPublisher kafkaEventPublisher) {
         this.binanceApiClient = binanceApiClient;
         this.scheduler = Executors.newScheduledThreadPool(1);
-        this.kafkaEventPublisher = new KafkaEventPublisher();
+        this.kafkaEventPublisher = kafkaEventPublisher;
     }
 
     @Override

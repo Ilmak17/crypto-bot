@@ -11,12 +11,12 @@ import java.util.Properties;
 public class KafkaEventPublisher {
     private final KafkaProducer<String, String> producer;
 
-    public KafkaEventPublisher() {
-
+    public KafkaEventPublisher(String bootstrapServers) {
         Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
         producer = new KafkaProducer<>(props);
     }
 

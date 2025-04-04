@@ -61,7 +61,7 @@ class ExchangerServiceKafkaIntegrationTest {
         Order sellOrder = new Order(2L, OrderType.SELL, 0.5, 19000.0, OrderStatus.NEW, OrderSourceType.BOT);
 
         publisher.publish(Topic.ORDER_EVENTS, buyOrder.toString());
-        Thread.sleep(100); // ждём Kafka consumer
+        Thread.sleep(100);
         publisher.publish(Topic.ORDER_EVENTS, sellOrder.toString());
 
         boolean matched = false;

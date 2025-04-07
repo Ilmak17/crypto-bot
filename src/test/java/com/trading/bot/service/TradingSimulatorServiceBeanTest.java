@@ -27,7 +27,7 @@ class TradingSimulatorServiceBeanTest {
 
     @Test
     void testStartPublishesPrice() throws InterruptedException {
-        when(binanceApiClient.getPrice(Symbol.BTCUSDT)).thenReturn(42000.0);
+        when(binanceApiClient.getPrice(Symbol.BTCUSDT)).thenReturn(82000.0);
 
         tradingService.start();
 
@@ -35,7 +35,7 @@ class TradingSimulatorServiceBeanTest {
 
         verify(binanceApiClient, atLeastOnce()).getPrice(Symbol.BTCUSDT);
         verify(kafkaEventPublisher, atLeastOnce())
-                .publish(eq(PRICE_UPDATES), contains("BTCUSDT: 42000.0"));
+                .publish(eq(PRICE_UPDATES), contains("BTCUSDT: 82000.0"));
 
         tradingService.stop();
     }

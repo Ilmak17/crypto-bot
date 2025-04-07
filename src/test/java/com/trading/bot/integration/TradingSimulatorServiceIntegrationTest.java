@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class TradingSimulatorServiceKafkaIntegrationTest {
+class TradingSimulatorServiceIntegrationTest {
 
     @Container
     public KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));

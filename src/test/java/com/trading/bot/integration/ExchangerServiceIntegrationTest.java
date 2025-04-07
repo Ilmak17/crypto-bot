@@ -39,7 +39,7 @@ class ExchangerServiceKafkaIntegrationTest {
         System.setProperty("KAFKA_BOOTSTRAP_SERVERS", bootstrapServers);
 
         BinanceApiClient apiClient = mock(BinanceApiClient.class);
-        when(apiClient.getPrice(Symbol.BTCUSDT)).thenReturn(20000.0);
+        when(apiClient.getPrice(Symbol.BTCUSDT)).thenReturn(81500.0);
 
         publisher = new KafkaEventPublisher(bootstrapServers);
         exchangerService = new ExchangerServiceBean(Symbol.BTCUSDT, apiClient, publisher);
@@ -57,8 +57,8 @@ class ExchangerServiceKafkaIntegrationTest {
 
     @Test
     void testOrderMatchingViaKafka() throws InterruptedException {
-        Order buyOrder = new Order(1L, OrderType.BUY, 0.5, 21000.0, OrderStatus.NEW, OrderSourceType.BOT);
-        Order sellOrder = new Order(2L, OrderType.SELL, 0.5, 19000.0, OrderStatus.NEW, OrderSourceType.BOT);
+        Order buyOrder = new Order(1L, OrderType.BUY, 0.5, 81000.0, OrderStatus.NEW, OrderSourceType.BOT);
+        Order sellOrder = new Order(2L, OrderType.SELL, 0.5, 85000.0, OrderStatus.NEW, OrderSourceType.BOT);
 
         publisher.publish(Topic.ORDER_EVENTS, buyOrder.toString());
         Thread.sleep(100);

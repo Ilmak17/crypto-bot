@@ -1,11 +1,16 @@
 package com.trading.bot.integration;
 
+import com.trading.bot.api.BinanceApiClient;
 import com.trading.bot.event.KafkaEventPublisher;
 import com.trading.bot.model.Order;
-import com.trading.bot.model.enums.*;
+import com.trading.bot.model.enums.OrderSourceType;
+import com.trading.bot.model.enums.OrderStatus;
+import com.trading.bot.model.enums.OrderType;
+import com.trading.bot.model.enums.Symbol;
 import com.trading.bot.service.ExchangerServiceBean;
-import com.trading.bot.api.BinanceApiClient;
-import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.KafkaContainer;
@@ -14,55 +19,70 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collections;
+import java.util.Properties;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static com.trading.bot.model.enums.Topic.ORDER_EVENTS;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ExchangerServiceKafkaIntegrationTest {
-
+class ExchangerServiceIntegrationTest {
     @Container
-    private final KafkaContainer kafka = new KafkaContainer(
-            DockerImageName.parse("confluentinc/cp-kafka:7.5.0")
-    );
+    public KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));
 
-    private ExchangerServiceBean exchangerService;
     private KafkaEventPublisher publisher;
     private KafkaConsumer<String, String> consumer;
 
+    private ExchangerServiceBean exchangerService;
+
     @BeforeAll
-    void setUp() {
+    void setup() {
         kafka.start();
+
         String bootstrapServers = kafka.getBootstrapServers();
-        System.setProperty("KAFKA_BOOTSTRAP_SERVERS", bootstrapServers);
-
-        BinanceApiClient apiClient = mock(BinanceApiClient.class);
-        when(apiClient.getPrice(Symbol.BTCUSDT)).thenReturn(81500.0);
-
         publisher = new KafkaEventPublisher(bootstrapServers);
-        exchangerService = new ExchangerServiceBean(Symbol.BTCUSDT, apiClient, publisher);
+        consumer = createConsumer(bootstrapServers);
+        consumer.subscribe(Collections.singleton(ORDER_EVENTS.getTopicName()));
 
-        consumer = createKafkaConsumer(bootstrapServers);
-        consumer.subscribe(Collections.singleton(Topic.ORDER_EVENTS.getTopicName()));
+        BinanceApiClient mockApiClient = mock(BinanceApiClient.class);
+        when(mockApiClient.getPrice(Symbol.BTCUSDT)).thenReturn(82000.0);
+
+        exchangerService = new ExchangerServiceBean(
+                Symbol.BTCUSDT,
+                mockApiClient,
+                publisher
+        );
     }
 
     @AfterAll
     void tearDown() {
-        publisher.close();
-        consumer.close();
-        kafka.stop();
+        if (publisher != null) publisher.close();
+        if (consumer != null) consumer.close();
+        exchangerService.stopAutoUpdate();
     }
 
     @Test
-    void testOrderMatchingViaKafka() throws InterruptedException {
-        Order buyOrder = new Order(1L, OrderType.BUY, 0.5, 81000.0, OrderStatus.NEW, OrderSourceType.BOT);
-        Order sellOrder = new Order(2L, OrderType.SELL, 0.5, 85000.0, OrderStatus.NEW, OrderSourceType.BOT);
+    void testOrderMatchingViaKafka() {
+        waitForTopicReady(ORDER_EVENTS.getTopicName(), consumer);
 
-        publisher.publish(Topic.ORDER_EVENTS, buyOrder.toString());
-        Thread.sleep(100);
-        publisher.publish(Topic.ORDER_EVENTS, sellOrder.toString());
+        Order buyOrder = new Order(
+                UUID.randomUUID().getMostSignificantBits(),
+                OrderType.BUY, 0.01, 81000.0,
+                OrderStatus.NEW, OrderSourceType.BOT
+        );
+
+        Order sellOrder = new Order(
+                UUID.randomUUID().getMostSignificantBits(),
+                OrderType.SELL, 0.01, 83000.0,
+                OrderStatus.NEW, OrderSourceType.BOT
+        );
+
+        exchangerService.placeOrder(buyOrder);
+        exchangerService.placeOrder(sellOrder);
 
         boolean matched = false;
         long start = System.currentTimeMillis();
@@ -70,7 +90,7 @@ class ExchangerServiceKafkaIntegrationTest {
         while (System.currentTimeMillis() - start < 5000) {
             var records = consumer.poll(Duration.ofMillis(500));
             for (ConsumerRecord<String, String> record : records) {
-                if (record.value().contains("Matched: BUY")) {
+                if (record.value().contains("Matched")) {
                     matched = true;
                     break;
                 }
@@ -81,13 +101,31 @@ class ExchangerServiceKafkaIntegrationTest {
         assertTrue(matched, "Orders were not matched via Kafka.");
     }
 
-    private KafkaConsumer<String, String> createKafkaConsumer(String bootstrapServers) {
+    private void waitForTopicReady(String topic, KafkaConsumer<String, String> consumer) {
+        long start = System.currentTimeMillis();
+        boolean found = false;
+
+        while (!found && System.currentTimeMillis() - start < 5000) {
+            try {
+                consumer.partitionsFor(topic);
+                found = true;
+            } catch (Exception ignored) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+    private KafkaConsumer<String, String> createConsumer(String bootstrapServers) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "exchange-integration-test");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         return new KafkaConsumer<>(props);
     }

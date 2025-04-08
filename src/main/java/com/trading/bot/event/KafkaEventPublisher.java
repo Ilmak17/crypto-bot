@@ -1,6 +1,7 @@
 package com.trading.bot.event;
 
 import com.trading.bot.model.enums.Topic;
+import io.github.cdimascio.dotenv.Dotenv;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -17,7 +18,9 @@ public class KafkaEventPublisher {
     }
 
     public KafkaEventPublisher() {
-        producer = getStringStringKafkaProducer("localhost:9092");
+        Dotenv dotenv = Dotenv.load();
+        String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092");
+        producer = getStringStringKafkaProducer(bootstrapServers);
     }
 
     @NotNull

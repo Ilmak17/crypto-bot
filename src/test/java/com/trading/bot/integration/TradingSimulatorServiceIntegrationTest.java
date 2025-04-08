@@ -24,20 +24,21 @@ import static org.mockito.Mockito.*;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class TradingSimulatorServiceIntegrationTest {
+class TradingSimulatorServiceIntegrationTest extends IntegrationSpec{
 
     @Container
     public KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));
 
     private KafkaEventPublisher publisher;
-    private KafkaConsumer<String, String> consumer;
     private TradingSimulatorServiceBean simulatorService;
+
+    private static final String GROUP_ID = "trading-simulator-test";
 
     @BeforeAll
     void setup() {
         String bootstrapServers = kafka.getBootstrapServers();
         publisher = new KafkaEventPublisher(bootstrapServers);
-        consumer = createConsumer(bootstrapServers);
+        consumer = createConsumer(bootstrapServers, GROUP_ID);
         consumer.subscribe(Collections.singleton(PRICE_UPDATES.getTopicName()));
 
         BinanceApiClient apiClient = mock(BinanceApiClient.class);
@@ -55,7 +56,7 @@ class TradingSimulatorServiceIntegrationTest {
     }
 
     @Test
-    void testPricePublishingToKafka() throws InterruptedException {
+    void testPricePublishingToKafka() {
         boolean received = false;
         long start = System.currentTimeMillis();
 
@@ -71,15 +72,5 @@ class TradingSimulatorServiceIntegrationTest {
         }
 
         assertTrue(received, "Price update was not published to Kafka.");
-    }
-
-    private KafkaConsumer<String, String> createConsumer(String bootstrapServers) {
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "trading-simulator-test");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        return new KafkaConsumer<>(props);
     }
 }

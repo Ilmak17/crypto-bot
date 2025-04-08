@@ -30,14 +30,14 @@ import static org.mockito.Mockito.when;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ExchangerServiceIntegrationTest {
+class ExchangerServiceIntegrationTest extends IntegrationSpec {
     @Container
     public KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));
 
     private KafkaEventPublisher publisher;
-    private KafkaConsumer<String, String> consumer;
-
     private ExchangerServiceBean exchangerService;
+
+    private static final String GROUP_ID = "exchange-integration-test";
 
     @BeforeAll
     void setup() {
@@ -45,7 +45,7 @@ class ExchangerServiceIntegrationTest {
 
         String bootstrapServers = kafka.getBootstrapServers();
         publisher = new KafkaEventPublisher(bootstrapServers);
-        consumer = createConsumer(bootstrapServers);
+        consumer = createConsumer(bootstrapServers, GROUP_ID);
         consumer.subscribe(Collections.singleton(ORDER_EVENTS.getTopicName()));
 
         BinanceApiClient mockApiClient = mock(BinanceApiClient.class);
@@ -71,7 +71,7 @@ class ExchangerServiceIntegrationTest {
 
         Order buyOrder = new Order(
                 UUID.randomUUID().getMostSignificantBits(),
-                OrderType.BUY, 0.01, 81000.0,
+                OrderType.BUY, 0.01, 84000.0,
                 OrderStatus.NEW, OrderSourceType.BOT
         );
 
@@ -117,16 +117,5 @@ class ExchangerServiceIntegrationTest {
                 }
             }
         }
-    }
-
-    private KafkaConsumer<String, String> createConsumer(String bootstrapServers) {
-        Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "exchange-integration-test");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-        return new KafkaConsumer<>(props);
     }
 }

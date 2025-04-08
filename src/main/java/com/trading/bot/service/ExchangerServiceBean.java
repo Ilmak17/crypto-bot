@@ -90,9 +90,11 @@ public class ExchangerServiceBean implements ExchangerService {
     @Override
     public boolean cancelOrder(Long orderId) {
         Optional<Order> orderToCancel = buyOrders.stream()
-                .filter(order -> order.getId().equals(orderId))
+                .filter(order -> orderId.equals(order.getId()))
                 .findFirst()
-                .or(() -> sellOrders.stream().filter(order -> order.getId().equals(orderId)).findFirst());
+                .or(() -> sellOrders.stream()
+                        .filter(order -> orderId.equals(order.getId()))
+                        .findFirst());
 
         if (orderToCancel.isPresent()) {
             orderToCancel.get().cancel();

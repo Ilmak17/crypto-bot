@@ -68,9 +68,13 @@ public class DumbBotBean implements Bot {
     }
 
     private void placeOrder(double price, OrderType type) {
-        double amount = (type == OrderType.BUY)
-                ? random.nextDouble(usdtBalance / price)
-                : random.nextDouble(btcBalance);
+        double bound = (type == OrderType.BUY)
+                ? usdtBalance / price
+                : btcBalance;
+
+        if (bound <= 0 || !Double.isFinite(bound)) return;
+
+        double amount = random.nextDouble(bound);
 
         if (amount <= 0) return;
 

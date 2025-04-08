@@ -18,14 +18,13 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class KafkaIntegrationTest {
+class KafkaIntegrationTest extends IntegrationSpec {
 
     @Container
     public KafkaContainer kafka = new KafkaContainer(
@@ -54,7 +53,7 @@ class KafkaIntegrationTest {
 
         publisher.publish(Topic.ORDER_EVENTS, testMessage);
 
-        KafkaConsumer<String, String> consumer = getStringStringKafkaConsumer();
+        KafkaConsumer<String, String> consumer = createConsumer(kafka.getBootstrapServers(), "test-group");
         consumer.subscribe(Collections.singleton(topic));
 
         ConsumerRecord<String, String> received = null;
@@ -72,16 +71,5 @@ class KafkaIntegrationTest {
         assertNotNull(received, "Message was not received");
         assertEquals(testMessage, received.value());
         consumer.close();
-    }
-
-    private @NotNull KafkaConsumer<String, String> getStringStringKafkaConsumer() {
-        Properties consumerProps = new Properties();
-        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "test-group");
-        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-        return new KafkaConsumer<>(consumerProps);
     }
 }

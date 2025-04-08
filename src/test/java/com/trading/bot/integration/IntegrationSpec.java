@@ -10,7 +10,6 @@ public abstract class IntegrationSpec {
 
     protected KafkaConsumer<String, String> consumer;
 
-
     protected KafkaConsumer<String, String> createConsumer(String bootstrapServers, String groupId) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);

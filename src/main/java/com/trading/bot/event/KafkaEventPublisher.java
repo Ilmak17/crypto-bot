@@ -17,7 +17,6 @@ public class KafkaEventPublisher {
     private static final Logger logger = LoggerFactory.getLogger(KafkaEventPublisher.class);
     private static final String DEAD_LETTER_TOPIC = "dead-letter-topic";
 
-
     public KafkaEventPublisher(String bootstrapServers) {
         producer = getStringStringKafkaProducer(bootstrapServers);
     }

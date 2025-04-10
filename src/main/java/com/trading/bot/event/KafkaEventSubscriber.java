@@ -1,5 +1,6 @@
 package com.trading.bot.event;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -22,12 +23,16 @@ public class KafkaEventSubscriber {
     public KafkaEventSubscriber(String topic, Consumer<String> eventHandler) {
         this.eventHandler = eventHandler;
 
+        Dotenv dotenv = Dotenv.load();
+        String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092");
+
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "trading-bot-group");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
         this.consumer = new KafkaConsumer<>(props);
         this.consumer.subscribe(Collections.singletonList(topic));
@@ -36,11 +41,16 @@ public class KafkaEventSubscriber {
     public void listen() {
         new Thread(() -> {
             while (true) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
                 for (ConsumerRecord<String, String> record : records) {
-                    logger.info("Received Kafka Event: {}", record.value());
-                    eventHandler.accept(record.value());
+                    try {
+                        logger.info("Received Kafka Event: {}", record.value());
+                        eventHandler.accept(record.value());
+                    } catch (Exception e) {
+                        logger.error("Error while handling Kafka event: {}", record.value(), e);
+                    }
                 }
+                consumer.commitSync();
             }
         }).start();
     }

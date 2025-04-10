@@ -1,20 +1,15 @@
 package com.trading.bot.api;
 
-import com.binance.connector.client.SpotClient;
 import com.trading.bot.api.dto.OrderBookDto;
-import com.trading.bot.api.dto.PriceDto;
 import com.trading.bot.model.enums.Symbol;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class BinanceApiClientBeanTest {
 
     private BinanceApiClientBean apiClient;
-    private SpotClient mockClient;
 
     @BeforeEach
     void setUp() {

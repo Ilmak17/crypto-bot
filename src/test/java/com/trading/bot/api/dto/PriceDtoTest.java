@@ -26,13 +26,13 @@ class PriceDtoTest {
         String json = """
                 {
                   "symbol": "ETHUSDT",
-                  "price": 1820.75
+                  "price": 2020.75
                 }
                 """;
 
         PriceDto dto = objectMapper.readValue(json, PriceDto.class);
 
         assertEquals("ETHUSDT", dto.getSymbol());
-        assertEquals(1820.75, dto.getPrice());
+        assertEquals(2020.75, dto.getPrice());
     }
 }

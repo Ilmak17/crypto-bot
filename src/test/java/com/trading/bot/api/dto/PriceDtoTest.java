@@ -13,12 +13,12 @@ class PriceDtoTest {
 
     @Test
     void testSerialization() throws JsonProcessingException {
-        PriceDto dto = new PriceDto("BTCUSDT", 30500.50);
+        PriceDto dto = new PriceDto("BTCUSDT", 80500.50);
 
         String json = objectMapper.writeValueAsString(dto);
 
         assertTrue(json.contains("\"symbol\":\"BTCUSDT\""));
-        assertTrue(json.contains("\"price\":30500.5"));
+        assertTrue(json.contains("\"price\":80500.5"));
     }
 
     @Test

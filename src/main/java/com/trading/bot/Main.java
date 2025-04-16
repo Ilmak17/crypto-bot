@@ -9,8 +9,7 @@ public class Main {
         BinanceApiClientBean binanceClient = new BinanceApiClientBean();
 
         System.out.println("Fetching BTC/USDT price...");
-        Double price = 84169D;
-        System.out.println("Current BTC/USDT price: " + price);
+        System.out.println("Current BTC/USDT price: " + binanceClient.getPrice();
 
         System.out.println("\nFetching Order Book...");
         OrderBookDto orderBook = binanceClient.getOrderBook(Symbol.BTCUSDT, 5);

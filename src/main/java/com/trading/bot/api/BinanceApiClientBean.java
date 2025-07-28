@@ -15,11 +15,15 @@ public class BinanceApiClientBean implements BinanceApiClient {
     private static final Logger logger = LoggerFactory.getLogger(BinanceApiClientBean.class);
     private static final SpotClient client;
 
+    private static final String BINANCE_BASE_URL = "BINANCE_BASE_URL";
+    private static final String BINANCE_API_KEY = "BINANCE_API_KEY";
+    private static final String BINANCE_SECRET_KEY = "BINANCE_SECRET_KEY";
+
     static {
         Dotenv dotenv = Dotenv.load();
-        String baseUrl = dotenv.get("BINANCE_BASE_URL", "https://api.binance.com");
-        String apiKey = dotenv.get("BINANCE_API_KEY");
-        String secretKey = dotenv.get("BINANCE_SECRET_KEY");
+        String baseUrl = dotenv.get(BINANCE_BASE_URL, "https://api.binance.com");
+        String apiKey = dotenv.get(BINANCE_API_KEY);
+        String secretKey = dotenv.get(BINANCE_SECRET_KEY);
 
         if (apiKey == null || secretKey == null) {
             throw new IllegalStateException("Missing Binance API credentials in .env file");

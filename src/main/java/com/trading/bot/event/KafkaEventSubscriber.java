@@ -20,6 +20,8 @@ public class KafkaEventSubscriber {
     private final KafkaConsumer<String, String> consumer;
     private final Consumer<String> eventHandler;
 
+    private static final String GROUP = "trading-bot-group";
+
     public KafkaEventSubscriber(String topic, Consumer<String> eventHandler) {
         this.eventHandler = eventHandler;
 
@@ -28,7 +30,7 @@ public class KafkaEventSubscriber {
 
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "trading-bot-group");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");

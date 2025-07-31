@@ -21,12 +21,13 @@ public class KafkaEventSubscriber {
     private final Consumer<String> eventHandler;
 
     private static final String GROUP = "trading-bot-group";
+    private static final String KAFKA_BOOTSTRAP_SERVERS = "KAFKA_BOOTSTRAP_SERVERS";
 
     public KafkaEventSubscriber(String topic, Consumer<String> eventHandler) {
         this.eventHandler = eventHandler;
 
         Dotenv dotenv = Dotenv.load();
-        String bootstrapServers = dotenv.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092");
+        String bootstrapServers = dotenv.get(KAFKA_BOOTSTRAP_SERVERS, "localhost:9092");
 
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);

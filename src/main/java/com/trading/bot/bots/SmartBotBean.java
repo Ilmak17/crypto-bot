@@ -90,7 +90,8 @@ public class SmartBotBean implements Bot {
         }
 
         Order order = new Order(
-                System.nanoTime(), type, amount, price, OrderStatus.NEW, null
+                System.nanoTime(), type, amount,
+                price, OrderStatus.NEW, null
         );
 
         orderHistory.add(order);

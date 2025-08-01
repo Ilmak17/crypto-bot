@@ -105,7 +105,10 @@ public class SmartBotBean implements Bot {
     private boolean isTrendingUp(Queue<Double> priceHistory) {
         if (priceHistory.size() < 2) return false;
 
-        double[] prices = priceHistory.stream().mapToDouble(Double::doubleValue).toArray();
+        double[] prices = priceHistory
+                .stream()
+                .mapToDouble(Double::doubleValue)
+                .toArray();
         for (int i = 1; i < prices.length; i++) {
             if (prices[i] <= prices[i - 1]) return false;
         }

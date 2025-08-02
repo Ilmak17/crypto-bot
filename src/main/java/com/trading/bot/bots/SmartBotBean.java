@@ -43,6 +43,7 @@ public class SmartBotBean implements Bot {
         if (priceHistory.size() == 5) {
             priceHistory.poll();
         }
+
         priceHistory.offer(price);
 
         double tradeVolume = random.nextDouble(5000);

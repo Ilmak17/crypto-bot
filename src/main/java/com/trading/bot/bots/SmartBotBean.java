@@ -46,6 +46,7 @@ public class SmartBotBean implements Bot {
 
         priceHistory.offer(price);
 
+
         double tradeVolume = random.nextDouble(5000);
         boolean isTrendingUp = isTrendingUp(priceHistory);
 
